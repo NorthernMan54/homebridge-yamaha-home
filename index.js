@@ -205,7 +205,7 @@ function YamahaSwitch(log, config, name, yamaha, sysConfig, preset) {
 
     this.nameSuffix = config["name_suffix"] || " Speakers";
     this.zone = config["zone"] || 1;
-    this.name = 'Radio ' + name.toString();
+    this.name = 'Preset ' + name.toString();
     this.serviceName = name + this.nameSuffix;
     this.setMainInputTo = config["setMainInputTo"];
     this.playVolume = this.config["play_volume"];
