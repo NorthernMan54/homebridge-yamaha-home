@@ -233,16 +233,16 @@ YamahaSwitch.prototype = {
         switchService.getCharacteristic(Characteristic.On)
             .on('get', function(callback, context) {
                 yamaha.getBasicInfo().then(function(basicInfo) {
-                    this.log('Is On', basicInfo.isOn()); // True
-                    this.log('Input', basicInfo.getCurrentInput()); // Tuner
+                    debug('Is On', basicInfo.isOn()); // True
+                    debug('Input', basicInfo.getCurrentInput()); // Tuner
 
                     if (basicInfo.isOn() && basicInfo.getCurrentInput() == 'TUNER') {
 
                         yamaha.getTunerInfo().then(function(result) {
                             //console.log( 'TunerInfo', JSON.stringify(result,null, 0));
-                            this.log(result.Play_Info[0].Feature_Availability[0]); // Ready
-                            this.log(result.Play_Info[0].Search_Mode[0]); // Preset
-                            this.log(result.Play_Info[0].Preset[0].Preset_Sel[0]); // #
+                            debug(result.Play_Info[0].Feature_Availability[0]); // Ready
+                            debug(result.Play_Info[0].Search_Mode[0]); // Preset
+                            debug(result.Play_Info[0].Preset[0].Preset_Sel[0]); // #
                             if (result.Play_Info[0].Feature_Availability[0] == 'Ready' &&
                                 result.Play_Info[0].Search_Mode[0] == 'Preset' &&
                                 result.Play_Info[0].Preset[0].Preset_Sel[0] == this.preset) {
@@ -264,7 +264,7 @@ YamahaSwitch.prototype = {
             }.bind(this))
             .on('set', function(powerOn, callback) {
                 yamaha.selectTunerPreset(this.preset).then(function() {
-                    debug('Tuning radio to preset %s - %s', this.preset, this.name);
+                    this.log('Tuning radio to preset %s - %s', this.preset, this.name);
                     callback(null,1);
                 }.bind(this));
             }.bind(this));
