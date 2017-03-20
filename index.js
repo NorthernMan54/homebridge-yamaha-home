@@ -68,6 +68,8 @@ function YamahaAVRPlatform(log, config) {
     this.setMainInputTo = config["setMainInputTo"];
     this.expectedDevices = config["expected_devices"] || 100;
     this.discoveryTimeout = config["discovery_timeout"] || 30;
+    this.radioPresets = config["radio_presets"] || false;
+    this.presetName = config["preset_name"] || true;
     this.manualAddresses = config["manual_addresses"] || {};
     this.browser = mdns.createBrowser(mdns.tcp('http'), {
         resolverSequence: sequence
@@ -144,13 +146,21 @@ YamahaAVRPlatform.prototype = {
 
                     // Add buttons for each preset
 
-                    yamaha.getTunerPresetList().then(function(presets) {
-                        for (var preset in presets) {
-                            this.log("Adding preset", presets[preset].value);
-                            var accessory = new YamahaSwitch(this.log, this.config, presets[preset].value, yamaha, sysConfig, preset);
-                            accessories.push(accessory);
-                        };
-                    }.bind(this));
+                    if (this.radioPresets) {
+                        yamaha.getTunerPresetList().then(function(presets) {
+                            for (var preset in presets) {
+                                this.log("Adding preset %s - %s", preset, presets[preset].value);
+                                if (this.presetName) {
+                                    // preset by frequency
+                                    var accessory = new YamahaSwitch(this.log, this.config, presets[preset].value, yamaha, sysConfig, preset);
+                                } else {
+                                    // Preset by number
+                                    var accessory = new YamahaSwitch(this.log, this.config, preset, yamaha, sysConfig, preset);
+                                }
+                                accessories.push(accessory);
+                            };
+                        }.bind(this));
+                    }
 
                     if (accessories.length >= this.expectedDevices)
                         timeoutFunction(); // We're done, call the timeout function now.
@@ -263,10 +273,13 @@ YamahaSwitch.prototype = {
 
             }.bind(this))
             .on('set', function(powerOn, callback) {
-                yamaha.selectTunerPreset(this.preset).then(function() {
-                    this.log('Tuning radio to preset %s - %s', this.preset, this.name);
-                    callback(null,1);
+                yamaha.setMainInputTo("TUNER").then(function() {
+                    return yamaha.selectTunerPreset(this.preset).then(function() {
+                        this.log('Tuning radio to preset %s - %s', this.preset, this.name);
+                        callback(null, 1);
+                    }.bind(this));
                 }.bind(this));
+
             }.bind(this));
 
         return [informationService, switchService];
