@@ -69,7 +69,7 @@ function YamahaAVRPlatform(log, config) {
     this.expectedDevices = config["expected_devices"] || 100;
     this.discoveryTimeout = config["discovery_timeout"] || 30;
     this.radioPresets = config["radio_presets"] || false;
-    this.presetName = config["preset_name"] || true;
+    this.presetNum = config["preset_num"] || false;
     this.manualAddresses = config["manual_addresses"] || {};
     this.browser = mdns.createBrowser(mdns.tcp('http'), {
         resolverSequence: sequence
@@ -149,8 +149,8 @@ YamahaAVRPlatform.prototype = {
                     if (this.radioPresets) {
                         yamaha.getTunerPresetList().then(function(presets) {
                             for (var preset in presets) {
-                                this.log("Adding preset %s - %s", preset, presets[preset].value);
-                                if (this.presetName) {
+                                this.log("Adding preset %s - %s", preset, presets[preset].value,this.presetNum);
+                                if ( !this.presetNum ) {
                                     // preset by frequency
                                     var accessory = new YamahaSwitch(this.log, this.config, presets[preset].value, yamaha, sysConfig, preset);
                                 } else {
