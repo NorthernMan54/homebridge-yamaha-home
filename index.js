@@ -132,36 +132,37 @@ YamahaAVRPlatform.prototype = {
             var yamaha = new Yamaha(service.host);
             yamaha.getSystemConfig().then(
                 function(sysConfig) {
-                    debug(JSON.stringify(sysConfig, null, 2));
-                    var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
-                    var sysId = sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0];
-                    if (sysIds[sysId]) {
-                        this.log("WARN: Got multiple systems with ID " + sysId + "! Omitting duplicate!");
-                        return;
+                  //  debug('before error', JSON.stringify(sysConfig, null, 2));
+                    if (sysConfig.YAMAHA_AV) {
+                        var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
+                        var sysId = sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0];
+                        if (sysIds[sysId]) {
+                            this.log("WARN: Got multiple systems with ID " + sysId + "! Omitting duplicate!");
+                            return;
+                        }
+                        sysIds[sysId] = true;
+                        this.log("Found Yamaha " + sysModel + " - " + sysId + ", \"" + name + "\"");
+                        var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
+                        accessories.push(accessory);
+
+                        // Add buttons for each preset
+
+                        if (this.radioPresets) {
+                            yamaha.getTunerPresetList().then(function(presets) {
+                                for (var preset in presets) {
+                                    this.log("Adding preset %s - %s", preset, presets[preset].value, this.presetNum);
+                                    if (!this.presetNum) {
+                                        // preset by frequency
+                                        var accessory = new YamahaSwitch(this.log, this.config, presets[preset].value, yamaha, sysConfig, preset);
+                                    } else {
+                                        // Preset by number
+                                        var accessory = new YamahaSwitch(this.log, this.config, preset, yamaha, sysConfig, preset);
+                                    }
+                                    accessories.push(accessory);
+                                };
+                            }.bind(this));
+                        }
                     }
-                    sysIds[sysId] = true;
-                    this.log("Found Yamaha " + sysModel + " - " + sysId + ", \"" + name + "\"");
-                    var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
-                    accessories.push(accessory);
-
-                    // Add buttons for each preset
-
-                    if (this.radioPresets) {
-                        yamaha.getTunerPresetList().then(function(presets) {
-                            for (var preset in presets) {
-                                this.log("Adding preset %s - %s", preset, presets[preset].value,this.presetNum);
-                                if ( !this.presetNum ) {
-                                    // preset by frequency
-                                    var accessory = new YamahaSwitch(this.log, this.config, presets[preset].value, yamaha, sysConfig, preset);
-                                } else {
-                                    // Preset by number
-                                    var accessory = new YamahaSwitch(this.log, this.config, preset, yamaha, sysConfig, preset);
-                                }
-                                accessories.push(accessory);
-                            };
-                        }.bind(this));
-                    }
-
                     if (accessories.length >= this.expectedDevices)
                         timeoutFunction(); // We're done, call the timeout function now.
                 }.bind(this),
@@ -361,6 +362,50 @@ YamahaAVRAccessory.prototype = {
                 });
             }.bind(this));
 
+        var mainService = new Service.Lightbulb(this.name);
+        mainService.getCharacteristic(Characteristic.On)
+            .on('get', function(callback, context) {
+                yamaha.isOn().then(
+                    function(result) {
+                        callback(false, result);
+                    }.bind(this),
+                    function(error) {
+                        callback(error, false);
+                    }.bind(this)
+                );
+            }.bind(this))
+            .on('set', function(powerOn, callback) {
+                this.setPlaying(powerOn).then(function() {
+                    callback(false, powerOn);
+                }, function(error) {
+                    callback(error, !powerOn); //TODO: Actually determine and send real new status.
+                });
+            }.bind(this));
+
+        mainService.addCharacteristic(new Characteristic.Brightness())
+            .on('get', function(callback, context) {
+                yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+                    var v = basicInfo.getVolume() / 10.0;
+                    var p = 100 * ((v - that.minVolume) / that.gapVolume);
+                    p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
+                    debug("Got volume percent of " + p + "%");
+                    callback(false, p);
+                }, function(error) {
+                    callback(error, 0);
+                });
+            })
+            .on('set', function(p, callback) {
+                var v = ((p / 100) * that.gapVolume) + that.minVolume;
+                v = Math.round(v * 10.0);
+                debug("Setting volume to " + v);
+                yamaha.setVolumeTo(v, that.zone).then(function() {
+                    callback(false, p);
+                }, function(error) {
+                    callback(error, volCx.value);
+                });
+            });
+
+
         var audioDeviceService = new Service.Speaker("Speaker");
         audioDeviceService.addCharacteristic(Characteristic.Volume);
         var volCx = audioDeviceService.getCharacteristic(Characteristic.Volume);
@@ -447,7 +492,7 @@ YamahaAVRAccessory.prototype = {
                 .getValue(null, null); // force an asynchronous get
         }
 
-        return [informationService, switchService, audioDeviceService, inputService];
+        return [informationService, switchService, audioDeviceService, inputService, mainService];
 
     }
 };

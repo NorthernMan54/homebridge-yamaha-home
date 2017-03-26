@@ -23,7 +23,7 @@ config.json
 - expected_devices - Maximum number of accessories created, defaults to 100
 - discovery_timeout - How long to stay in discovery mode, defaults to 30
 - radio_presets - Create a switch for each radio preset, defaults to false ( true/false )
-- preset_name - Names the switch the frequency of the preset, defaults to true ( true/false ). Otherwise the name is the preset number.
+- preset_num - Names the switch the number of the preset, defaults to false ( true/false ). Otherwise the name is the frequency. ( useful with Siri and Alexa )
 - zone - Zone name
 
 Example:
