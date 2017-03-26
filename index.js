@@ -132,7 +132,7 @@ YamahaAVRPlatform.prototype = {
             var yamaha = new Yamaha(service.host);
             yamaha.getSystemConfig().then(
                 function(sysConfig) {
-                  //  debug('before error', JSON.stringify(sysConfig, null, 2));
+                    //  debug( JSON.stringify(sysConfig, null, 2));
                     if (sysConfig.YAMAHA_AV) {
                         var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
                         var sysId = sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0];
@@ -144,6 +144,26 @@ YamahaAVRPlatform.prototype = {
                         this.log("Found Yamaha " + sysModel + " - " + sysId + ", \"" + name + "\"");
                         var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
                         accessories.push(accessory);
+
+                        yamaha.getAvailableZones().then(
+                            function(zones) {
+                                // Only add zones control if more than 1 zone
+                                if (zones.length > 1) {
+                                    for (var zone in zones) {
+
+                                        yamaha.getZoneConfig(zones[zone]).then(
+                                            function(zoneInfo) {
+                                                var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
+                                                zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
+                                                this.log("Adding zone controller for", zoneName);
+                                                var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z);
+                                                accessories.push(accessory);
+                                            }.bind(this)
+                                        );
+                                    }
+                                }
+                            }.bind(this)
+                        );
 
                         // Add buttons for each preset
 
@@ -284,6 +304,105 @@ YamahaSwitch.prototype = {
             }.bind(this));
 
         return [informationService, switchService];
+    }
+};
+
+function YamahaZone(log, config, name, yamaha, sysConfig, zone) {
+    this.log = log;
+    this.config = config;
+    this.yamaha = yamaha;
+    this.sysConfig = sysConfig;
+
+    this.minVolume = config["min_volume"] || -50.0;
+    this.maxVolume = config["max_volume"] || -20.0;
+    this.gapVolume = this.maxVolume - this.minVolume;
+
+    this.zone = zone;
+    this.name = name;
+}
+
+YamahaZone.prototype = {
+
+    setPlaying: function(playing) {
+        var that = this;
+        var yamaha = this.yamaha;
+
+        if (playing) {
+
+            return yamaha.powerOn(that.zone).then(function() {
+                if (that.playVolume) return yamaha.setVolumeTo(that.playVolume * 10, that.zone);
+                else return Q();
+            }).then(function() {
+                if (that.setMainInputTo) return yamaha.setMainInputTo(that.setMainInputTo);
+                else return Q();
+            }).then(function() {
+                if (that.setMainInputTo == "AirPlay") return yamaha.SendXMLToReceiver(
+                    '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
+                );
+                else return Q();
+            });
+        } else {
+            return yamaha.powerOff(that.zone);
+        }
+    },
+
+    getServices: function() {
+        var that = this;
+        var informationService = new Service.AccessoryInformation();
+        var yamaha = this.yamaha;
+
+        informationService
+            .setCharacteristic(Characteristic.Name, this.name)
+            .setCharacteristic(Characteristic.Manufacturer, "Yamaha")
+            .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
+            .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
+
+        var zoneService = new Service.Lightbulb(this.name);
+        zoneService.getCharacteristic(Characteristic.On)
+            .on('get', function(callback, context) {
+                yamaha.isOn(that.zone).then(
+                    function(result) {
+                        callback(false, result);
+                    }.bind(this),
+                    function(error) {
+                        callback(error, false);
+                    }.bind(this)
+                );
+            }.bind(this))
+            .on('set', function(powerOn, callback) {
+                this.setPlaying(powerOn).then(function() {
+                    callback(false, powerOn);
+                }, function(error) {
+                    callback(error, !powerOn); //TODO: Actually determine and send real new status.
+                });
+            }.bind(this));
+
+        zoneService.addCharacteristic(new Characteristic.Brightness())
+            .on('get', function(callback, context) {
+                yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+                    var v = basicInfo.getVolume() / 10.0;
+                    var p = 100 * ((v - that.minVolume) / that.gapVolume);
+                    p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
+                    debug("Got volume percent of " + v + "%, " + p + "% ",that.zone);
+                    callback(false, p);
+                }, function(error) {
+                    callback(error, 0);
+                });
+            })
+            .on('set', function(p, callback) {
+                var v = ((p / 100) * that.gapVolume) + that.minVolume;
+                v = Math.round(v * 10.0);
+                debug("Setting volume to " + v + "%, " + p + "% ",that.zone);
+                yamaha.setVolumeTo(v, that.zone).then(function(response) {
+                    debug("Success",response);
+                    callback(false, p);
+                }, function(error) {
+                    callback(error, volCx.value);
+                });
+            });
+
+
+        return [informationService, zoneService];
     }
 };
 
