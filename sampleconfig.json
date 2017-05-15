@@ -8,16 +8,12 @@
     "description": "This is an example configuration file for homebridge yamaha plugin",
     "hint": "Always paste into jsonlint.com validation page before starting your homebridge, saves a lot of frustration",
     "platforms": [
-        {
-            "platform": "YamahaAVR",
-            "play_volume": -48,
-            "setMainInputTo": "Airplay",
-            "show_input_name": "yes",
-			"zone": 1,
-            "manual_addresses": {
-                "Yamaha": "192.168.1.115"
-            }
-        }
+      {
+          "platform": "YamahaAVR",
+          "discovery_timeout": 15,
+          "radio_presets": true,
+          "preset_num": true
+      }
     ],
     "accessories": [
         {},
