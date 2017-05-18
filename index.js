@@ -151,7 +151,7 @@ YamahaAVRPlatform.prototype = {
                                 if (zones.length > 1) {
                                     for (var zone in zones) {
 
-                                        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+                                        yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
                                             if (basicInfo.getVolume() != -999) {
 
                                                 yamaha.getZoneConfig(zones[zone]).then(
