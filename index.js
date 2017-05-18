@@ -151,15 +151,22 @@ YamahaAVRPlatform.prototype = {
                                 if (zones.length > 1) {
                                     for (var zone in zones) {
 
-                                        yamaha.getZoneConfig(zones[zone]).then(
-                                            function(zoneInfo) {
-                                                var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
-                                                zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
-                                                this.log("Adding zone controller for", zoneName);
-                                                var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z);
-                                                accessories.push(accessory);
-                                            }.bind(this)
-                                        );
+                                        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+                                            if (basicInfo.getVolume() != -999) {
+
+                                                yamaha.getZoneConfig(zones[zone]).then(
+                                                    function(zoneInfo) {
+                                                        var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
+                                                        zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
+                                                        this.log("Adding zone controller for", zoneName);
+                                                        var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z);
+                                                        accessories.push(accessory);
+                                                    }.bind(this)
+                                                );
+
+                                            }
+                                        });
+
                                     }
                                 }
                             }.bind(this)
@@ -383,7 +390,7 @@ YamahaZone.prototype = {
                     var v = basicInfo.getVolume() / 10.0;
                     var p = 100 * ((v - that.minVolume) / that.gapVolume);
                     p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
-                    debug("Got volume percent of " + v + "%, " + p + "% ",that.zone);
+                    debug("Got volume percent of " + v + "%, " + p + "% ", that.zone);
                     callback(false, p);
                 }, function(error) {
                     callback(error, 0);
@@ -392,9 +399,9 @@ YamahaZone.prototype = {
             .on('set', function(p, callback) {
                 var v = ((p / 100) * that.gapVolume) + that.minVolume;
                 v = Math.round(v * 10.0);
-                debug("Setting volume to " + v + "%, " + p + "% ",that.zone);
+                debug("Setting volume to " + v + "%, " + p + "% ", that.zone);
                 yamaha.setVolumeTo(v, that.zone).then(function(response) {
-                    debug("Success",response);
+                    debug("Success", response);
                     callback(false, p);
                 }, function(error) {
                     callback(error, volCx.value);
