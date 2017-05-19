@@ -154,7 +154,7 @@ YamahaAVRPlatform.prototype = {
                                         yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
                                             if (basicInfo.getVolume() != -999) {
 
-                                                yamaha.getZoneConfig(zones[zone]).then(
+                                                yamaha.getZoneConfig(basicInfo.getZone()).then(
                                                     function(zoneInfo) {
                                                         var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
                                                         zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
@@ -165,7 +165,7 @@ YamahaAVRPlatform.prototype = {
                                                 );
 
                                             }
-                                        });
+                                        }.bind(this));
 
                                     }
                                 }
