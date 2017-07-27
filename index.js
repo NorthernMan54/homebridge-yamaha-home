@@ -148,7 +148,9 @@ YamahaAVRPlatform.prototype = {
                         yamaha.getAvailableZones().then(
                             function(zones) {
                                 // Only add zones control if more than 1 zone
-                                if (zones.length > 1) {
+                                // Hack to always create a zone control
+                                // TODO: Remove if block
+                                if (zones.length > 0) {
                                     for (var zone in zones) {
 
                                         yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
