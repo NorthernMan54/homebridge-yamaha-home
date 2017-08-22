@@ -400,7 +400,7 @@ YamahaZone.prototype = {
             })
             .on('set', function(p, callback) {
                 var v = ((p / 100) * that.gapVolume) + that.minVolume;
-                v = Math.round(v * 10.0);
+                v = Math.round(v ) * 10.0;
                 debug("Setting volume to " + v + "%, " + p + "% ", that.zone);
                 yamaha.setVolumeTo(v, that.zone).then(function(response) {
                     debug("Success", response);
@@ -524,7 +524,7 @@ YamahaAVRAccessory.prototype = {
             })
             .on('set', function(p, callback) {
                 var v = ((p / 100) * that.gapVolume) + that.minVolume;
-                v = Math.round(v * 10.0);
+                v = Math.round(v) * 10.0;
                 debug("Setting volume to " + v);
                 yamaha.setVolumeTo(v, that.zone).then(function() {
                     callback(false, p);
@@ -551,7 +551,7 @@ YamahaAVRAccessory.prototype = {
             })
             .on('set', function(p, callback) {
                 var v = ((p / 100) * that.gapVolume) + that.minVolume;
-                v = Math.round(v * 10.0);
+                v = Math.round(v)* 10.0;
                 debug("Setting volume to " + v);
                 yamaha.setVolumeTo(v, that.zone).then(function() {
                     callback(false, p);
