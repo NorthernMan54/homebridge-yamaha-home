@@ -442,7 +442,7 @@ YamahaAVRAccessory.prototype = {
 
         if (playing) {
 
-            return yamaha.powerOn().then(function() {
+            return yamaha.powerOn("System").then(function() {
                 if (that.playVolume) return yamaha.setVolumeTo(that.playVolume * 10, that.zone);
                 else return Q();
             }).then(function() {
@@ -455,7 +455,7 @@ YamahaAVRAccessory.prototype = {
                 else return Q();
             });
         } else {
-            return yamaha.powerOff();
+            return yamaha.powerOff("System");
         }
     },
 
