@@ -1,6 +1,6 @@
 # Homebridge-Yamaha
 
-homebridge-plugin for Yamaha AVR control with Apple-Homekit.
+homebridge-plugin for Yamaha AVR control with Apple-Homekit.  Optimized for use with the Apple Home App and with homebridge-alexa
 
 # Installation
 
