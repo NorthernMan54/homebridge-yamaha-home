@@ -9,7 +9,7 @@
     "hint": "Always paste into jsonlint.com validation page before starting your homebridge, saves a lot of frustration",
     "platforms": [
       {
-          "platform": "YamahaAVR",
+          "platform": "yamaha-home",
           "discovery_timeout": 15,
           "radio_presets": true,
           "preset_num": true

@@ -1,4 +1,7 @@
-# Homebridge-Yamaha
+# Homebridge-Yamaha-Home
+
+[![NPM Downloads](https://img.shields.io/npm/dm/homebridge-yamaha-home.svg?style=flat)](https://npmjs.org/package/homebridge-yamaha-home)
+
 
 homebridge-plugin for Yamaha AVR control with Apple-Homekit.  Optimized for use with the Apple Home App and with homebridge-alexa
 
@@ -7,7 +10,7 @@ homebridge-plugin for Yamaha AVR control with Apple-Homekit.  Optimized for use 
 Follow the instruction in [NPM](https://www.npmjs.com/package/homebridge) for the homebridge server installation. The plugin is published through [NPM](https://www.npmjs.com/package/homebridge-yamaha) and should be installed "globally" by typing:
 
 ```
-sudo npm install -g homebridge-yamaha
+sudo npm install -g homebridge-yamaha-home
 ```
 
 # Configuration
@@ -40,7 +43,7 @@ Example:
     "hint": "Always paste into jsonlint.com validation page before starting your homebridge, saves a lot of frustration",
     "platforms": [
         {
-            "platform": "YamahaAVR",
+            "platform": "yamaha-home",
             "play_volume": -48,
             "setMainInputTo": "Airplay",
             "show_input_name": "yes",
