@@ -55,7 +55,7 @@ function YamahaAVRPlatform(log, config) {
   this.showInputName = config["show_input_name"] || "no";
   this.setMainInputTo = config["setMainInputTo"];
   this.expectedDevices = config["expected_devices"] || 100;
-  this.discoveryTimeout = config["discovery_timeout"] || 30;
+  this.discoveryTimeout = config["discovery_timeout"] || 10;
   this.radioPresets = config["radio_presets"] || false;
   this.presetNum = config["preset_num"] || false;
   this.manualAddresses = config["manual_addresses"] || {};
@@ -98,6 +98,7 @@ YamahaAVRPlatform.prototype = {
   accessories: function(callback) {
     this.log("Getting Yamaha AVR devices.");
     var that = this;
+    var sysIds = {};
 
     var browser = bonjour.find({
       type: 'http'
@@ -106,9 +107,6 @@ YamahaAVRPlatform.prototype = {
     var accessories = [];
     var timer, timeElapsed = 0,
       checkCyclePeriod = 5000;
-
-    // Hmm... seems we need to prevent double-listing via manual and Bonjour...
-    var sysIds = {};
 
     // process manually specified devices...
     for (var key in this.manualAddresses) {
