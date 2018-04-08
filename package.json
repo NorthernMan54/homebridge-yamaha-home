@@ -1,5 +1,5 @@
 {
-  "name": "homebridge-yamaha-home",
+  "name": "@homebridge/homebridge-yamaha-home",
   "version": "0.0.3",
   "description": "homebridge-plugin for Yamaha AVR https://github.com/nfarina/homebridge",
   "main": "index.js",
@@ -23,7 +23,7 @@
   "dependencies": {
     "inherits": "^2.0.1",
     "request": "2.65.x",
-    "yamaha-nodejs": "git://github.com/NorthernMan54/yamaha-nodejs",
+    "yamaha-nodejs": "git://github.com/NorthernMan54/yamaha-nodejs.git",
     "bonjour": "^=3.5.0",
     "ip": "^=1.1.5",
     "q": "1.4.x",

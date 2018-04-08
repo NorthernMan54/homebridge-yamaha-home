@@ -10,7 +10,6 @@ Configuration Sample:
 
 var request = require("request");
 var Service, Characteristic, types, hapLegacyTypes;
-
 var inherits = require('util').inherits;
 var debug = require('debug')('yamaha-home');
 var Yamaha = require('yamaha-nodejs');
