@@ -16,6 +16,8 @@ var Yamaha = require('yamaha-nodejs');
 var Q = require('q');
 var bonjour = require('bonjour')();
 var ip = require('ip');
+    var sysIds = {};
+        var accessories = [];
 
 
 module.exports = function(homebridge) {
@@ -28,7 +30,7 @@ module.exports = function(homebridge) {
   fixInheritance(YamahaAVRPlatform.InputService, Service);
 
   //  homebridge.registerAccessory("homebridge-yamaha", "YamahaAVR", YamahaAVRAccessory);
-  homebridge.registerPlatform("homebridge-yamaha", "yamaha-home", YamahaAVRPlatform);
+  homebridge.registerPlatform("homebridge-yamaha-home", "yamaha-home", YamahaAVRPlatform);
 }
 
 // Necessary because Accessory is defined after we have defined all of our classes
@@ -97,13 +99,12 @@ YamahaAVRPlatform.prototype = {
   accessories: function(callback) {
     this.log("Getting Yamaha AVR devices.");
     var that = this;
-    var sysIds = {};
 
     var browser = bonjour.find({
       type: 'http'
     }, setupFromService.bind(this));
 
-    var accessories = [];
+
     var timer, timeElapsed = 0,
       checkCyclePeriod = 5000;
 
