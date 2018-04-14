@@ -2,9 +2,13 @@
 
 Configuration Sample:
 "platforms": [
-        {
-            "platform": "yamaha-home"
-        }
+{
+    "platform": "yamaha-home",
+    "discovery_timeout": 15,
+    "radio_presets": true,
+    "preset_num": true,
+    "max_volume": 20
+}
 
 */
 
@@ -16,8 +20,8 @@ var Yamaha = require('yamaha-nodejs');
 var Q = require('q');
 var bonjour = require('bonjour')();
 var ip = require('ip');
-    var sysIds = {};
-        var accessories = [];
+var sysIds = {};
+var accessories = [];
 
 
 module.exports = function(homebridge) {
@@ -104,7 +108,6 @@ YamahaAVRPlatform.prototype = {
       type: 'http'
     }, setupFromService.bind(this));
 
-
     var timer, timeElapsed = 0,
       checkCyclePeriod = 5000;
 
@@ -142,7 +145,7 @@ YamahaAVRPlatform.prototype = {
 
 function setupFromService(service) {
   // Looking for name, host and port
-  debug("HTTP Device discovered", service.name, service.addresses);
+  this.log("Possible Yamaha device discovered", service.name, service.addresses);
   if (service.addresses) {
     for (let address of service.addresses) {
 
@@ -161,7 +164,7 @@ function setupFromService(service) {
   yamaha.getSystemConfig().then(
     function(sysConfig) {
       //  debug( JSON.stringify(sysConfig, null, 2));
-      if (sysConfig.YAMAHA_AV) {
+      if (sysConfig && sysConfig.YAMAHA_AV) {
         var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
         var sysId = sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0];
         if (sysIds[sysId]) {
@@ -358,6 +361,7 @@ YamahaZone.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "Yamaha")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
+      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var zoneService = new Service.Lightbulb(this.name);
@@ -462,6 +466,7 @@ YamahaAVRAccessory.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "Yamaha")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
+      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var switchService = new Service.Switch("Yamaha Power");
