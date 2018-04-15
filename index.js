@@ -4,13 +4,15 @@ Configuration Sample:
 "platforms": [
 {
     "platform": "yamaha-home",
-    "discovery_timeout": 15,
+    "discovery_timeout": 5,
     "radio_presets": true,
     "preset_num": true,
     "max_volume": 20
 }
 
 */
+
+"use strict";
 
 var request = require("request");
 var Service, Characteristic, types, hapLegacyTypes;
