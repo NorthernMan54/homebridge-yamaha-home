@@ -12,7 +12,7 @@ Configuration Sample:
 
 */
 
-"use strict";
+//"use strict";
 
 var request = require("request");
 var Service, Characteristic, types, hapLegacyTypes;
@@ -116,12 +116,13 @@ YamahaAVRPlatform.prototype = {
     // process manually specified devices...
     for (var key in this.manualAddresses) {
       if (!this.manualAddresses.hasOwnProperty(key)) continue;
-      setupFromService({
+      debug("THIS-0",this);
+      setupFromService.call(this,{
         name: key,
         host: this.manualAddresses[key],
         port: 80
       });
-    }
+    };
 
     // The callback can only be called once...so we'll have to find as many as we can
     // in a fixed time and then call them in.
@@ -147,6 +148,7 @@ YamahaAVRPlatform.prototype = {
 
 function setupFromService(service) {
   // Looking for name, host and port
+  debug("THIS-1",this);
   this.log("Possible Yamaha device discovered", service.name, service.addresses);
   if (service.addresses) {
     for (let address of service.addresses) {
