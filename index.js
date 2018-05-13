@@ -66,6 +66,9 @@ function YamahaAVRPlatform(log, config) {
   this.radioPresets = config["radio_presets"] || false;
   this.presetNum = config["preset_num"] || false;
   this.manualAddresses = config["manual_addresses"] || {};
+  //this.partySwitch is nessesary for optional Party Mode Switch
+  this.partySwitch = config["party_switch"];
+
 }
 
 // Custom Characteristics and service...
@@ -179,8 +182,12 @@ function setupFromService(service) {
         var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
         accessories.push(accessory);
 
-        var accessory = new YamahaParty(this.log, this.config, name, yamaha, sysConfig);
-        accessories.push(accessory);
+        //Adding accessory with YamahaParty Switch.
+        //Depends on "party_switch" property in config.json. if "yes" => Party Mode Switch exists.
+        if (this.partySwitch === 'yes') {
+          var accessory = new YamahaParty(this.log, this.config, name, yamaha, sysConfig);
+          accessories.push(accessory);
+        }
 
         yamaha.getAvailableZones().then(
           function(zones) {
@@ -238,6 +245,7 @@ function setupFromService(service) {
   );
 };
 
+//Party Mode Switch
 function YamahaParty(log, config, name, yamaha, sysConfig) {
   this.log = log;
   this.config = config;
@@ -272,22 +280,15 @@ YamahaParty.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
-    //Attempt to add Party switch
-    //Ideally, after switch works, we have to add an if statement to check if property "party_switch" exists in config.json(not added yet) (not added yet). if true, add switch below
     var partyService = new Service.Switch(this.name);
     partyService.getCharacteristic(Characteristic.On)
       .on('get', function(callback) {
         const that = this;
-        this.yamaha.isPartyModeEnabled().then(function() {
-          that.yamaha.getZoneConfig(that.zoneName).then(function(result) {
+        this.yamaha.isPartyModeEnabled().then(function(result) {
             callback(null, result);
           });
-        })
-
       }.bind(this))
-
       .on('set', function(on, callback) {
-
         if (on) {
           const that = this;
           this.yamaha.powerOn().then(function() {
@@ -296,16 +297,13 @@ YamahaParty.prototype = {
                 callback(null, true);
               });
             });
-
           });
         } else {
           this.yamaha.partyModeOff().then(function() {
             callback(null, false);
           });
         }
-
       }.bind(this));
-
     return [informationService, partyService];
   }
 };

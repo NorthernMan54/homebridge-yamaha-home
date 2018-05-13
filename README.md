@@ -28,6 +28,7 @@ config.json
 - radio_presets - Create a switch for each radio preset, defaults to false ( true/false )
 - preset_num - Names the switch the number of the preset, defaults to false ( true/false ). Otherwise the name is the frequency. ( useful with Siri and Alexa )
 - zone - Zone name
+- party_switch - You can choose whether you need Party Mode Switch or not. "party_switch": "yes" if needed or don't add this property if you don't need the switch.
 
 Example:
 
@@ -47,6 +48,7 @@ Example:
             "play_volume": -48,
             "setMainInputTo": "Airplay",
             "show_input_name": "yes",
+            "party_switch": "yes",
             "manual_addresses": {
                 "Yamaha": "192.168.1.115"
             }
