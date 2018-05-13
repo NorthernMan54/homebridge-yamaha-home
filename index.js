@@ -493,6 +493,44 @@ YamahaAVRAccessory.prototype = {
         });
       }.bind(this));
 
+
+    //Attempt to add Party switch
+    //Ideally, after switch works, we have to add an if statement to check if property "party_switch" exists in config.json(not added yet) (not added yet). if true, add switch below
+    var partySwitch = new Service.Switch("Party Mode Switch");  
+    partySwitch.getCharacteristic(Characteristic.On)
+      .on('get', function(callback) {
+          const that = this;
+          this.yamaha.isPartyModeEnabled().then(function(){
+            that.yamaha.getZoneConfig(that.zoneName).then(function(result) {
+                callback(null, result);
+              });
+          })     
+
+        }.bind(this))
+
+      .on('set', function(on, callback) {
+        
+        if (on) {
+          const that = this;
+          this.yamaha.powerOn().then(function() {
+            that.yamaha.partyModeOn().then(function() {
+              that.yamaha.setVolumeTo(that.volume * 10, that.zoneName ).then(function() {
+                callback(null, true);
+              });
+            });
+
+          });
+        }
+        else {
+          this.yamaha.partyModeOff().then(function() {
+            callback(null, false);
+          });
+        }
+
+      }.bind(this));
+
+
+
     var mainService = new Service.Lightbulb(this.name);
     mainService.getCharacteristic(Characteristic.On)
       .on('get', function(callback, context) {
@@ -623,7 +661,7 @@ YamahaAVRAccessory.prototype = {
         .getValue(null, null); // force an asynchronous get
     }
 
-    return [informationService, switchService, audioDeviceService, inputService, mainService];
+    return [informationService, switchService, partySwitch, audioDeviceService, inputService, mainService];
 
   }
 };
