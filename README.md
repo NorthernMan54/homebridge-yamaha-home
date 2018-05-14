@@ -49,6 +49,18 @@ Example:
             "setMainInputTo": "Airplay",
             "show_input_name": "yes",
             "party_switch": "yes",
+            "inputs_as_accessories":{
+                        "YamahaReceiver": {
+                          "1": {
+                                "name":"Raspberry",
+                                "setInputTo": "HDMI1",
+                                "set_default_volume": -50
+                           },
+                          "2": {
+                                "name":"AppleTV",
+                                "setInputTo": "HDMI2"
+                           }
+            },
             "manual_addresses": {
                 "Yamaha": "192.168.1.115"
             }
