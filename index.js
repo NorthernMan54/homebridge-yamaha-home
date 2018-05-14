@@ -277,7 +277,7 @@ function YamahaParty(log, config, name, yamaha, sysConfig) {
   this.name = "Party Mode";
   this.serviceName = name;
   this.setMainInputTo = config["setMainInputTo"];
-  this.playVolume = this.config["play_volume"] || -55;
+  this.playVolume = this.config["play_volume"];
   this.minVolume = config["min_volume"] || -50.0;
   this.maxVolume = config["max_volume"] || -20.0;
   this.gapVolume = this.maxVolume - this.minVolume;
@@ -336,7 +336,7 @@ function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.nameSuffix = config["name_suffix"] || " Party Mode";
   this.zone = config["zone"] || 1;
   this.name = name;
-  this.setDefaultVolume = config["set_default_volume"] || -52;
+  this.setDefaultVolume = config["set_default_volume"];
   this.serviceName = name;
   this.defaultServiceName = config["default_service_name"];
   this.defaultServiceName = this.serviceName
