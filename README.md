@@ -29,6 +29,7 @@ config.json
 - preset_num - Names the switch the number of the preset, defaults to false ( true/false ). Otherwise the name is the frequency. ( useful with Siri and Alexa )
 - zone - Zone name
 - party_switch - You can choose whether you need Party Mode Switch or not. "party_switch": "yes" if needed or don't add this property if you don't need the switch.
+- inputs_as_accessories - If property exists, Input switches will be created. Checkout a config for example.
 
 Example:
 
@@ -55,8 +56,7 @@ config.json
         "YamahaReceiver": {
           "1": {
                 "name":"Raspberry",
-                "setInputTo": "HDMI1",
-                "set_default_volume": -50
+                "setInputTo": "HDMI1"
            },
           "2": {
                 "name":"AppleTV",
