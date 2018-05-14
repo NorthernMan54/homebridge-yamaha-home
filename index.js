@@ -7,7 +7,7 @@ Configuration Sample:
     "discovery_timeout": 5,
     "radio_presets": true,
     "preset_num": true,
-    "max_volume": 20
+    "max_volume": 10
 }
 
 */
@@ -56,8 +56,8 @@ function YamahaAVRPlatform(log, config) {
   this.config = config;
   this.zone = config["zone"] || "Main";
   this.playVolume = config["play_volume"];
-  this.minVolume = config["min_volume"] || -50.0;
-  this.maxVolume = config["max_volume"] || -20.0;
+  this.minVolume = config["min_volume"] || -65.0;
+  this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
   this.showInputName = config["show_input_name"] || "no";
   this.setMainInputTo = config["setMainInputTo"];
@@ -278,8 +278,8 @@ function YamahaParty(log, config, name, yamaha, sysConfig) {
   this.serviceName = name;
   this.setMainInputTo = config["setMainInputTo"];
   this.playVolume = this.config["play_volume"];
-  this.minVolume = config["min_volume"] || -50.0;
-  this.maxVolume = config["max_volume"] || -20.0;
+  this.minVolume = config["min_volume"] || -65.0;
+  this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
   this.showInputName = config["show_input_name"] || "no";
 
@@ -342,8 +342,8 @@ function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.defaultServiceName = this.serviceName
   this.setMainInputTo = config["setMainInputTo"];
   this.playVolume = this.config["play_volume"];
-  this.minVolume = config["min_volume"] || -50.0;
-  this.maxVolume = config["max_volume"] || -20.0;
+  this.minVolume = config["min_volume"] || -65.0;
+  this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
   this.showInputName = config["show_input_name"] || "no";
 
@@ -417,8 +417,8 @@ function YamahaSwitch(log, config, name, yamaha, sysConfig, preset) {
   this.serviceName = name + this.nameSuffix;
   this.setMainInputTo = config["setMainInputTo"];
   this.playVolume = this.config["play_volume"];
-  this.minVolume = config["min_volume"] || -50.0;
-  this.maxVolume = config["max_volume"] || -20.0;
+  this.minVolume = config["min_volume"] || -65.0;
+  this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
   this.showInputName = config["show_input_name"] || "no";
   this.preset = preset;
@@ -491,8 +491,8 @@ function YamahaZone(log, config, name, yamaha, sysConfig, zone) {
   this.yamaha = yamaha;
   this.sysConfig = sysConfig;
 
-  this.minVolume = config["min_volume"] || -50.0;
-  this.maxVolume = config["max_volume"] || -20.0;
+  this.minVolume = config["min_volume"] || -65.0;
+  this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
 
   this.zone = zone;
@@ -598,8 +598,8 @@ function YamahaAVRAccessory(log, config, name, yamaha, sysConfig) {
   this.serviceName = name + this.nameSuffix;
   this.setMainInputTo = config["setMainInputTo"];
   this.playVolume = this.config["play_volume"];
-  this.minVolume = config["min_volume"] || -50.0;
-  this.maxVolume = config["max_volume"] || -20.0;
+  this.minVolume = config["min_volume"] || -65.0;
+  this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
   this.showInputName = config["show_input_name"] || "no";
 }
