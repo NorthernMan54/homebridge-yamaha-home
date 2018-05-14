@@ -21,15 +21,15 @@
     "homebridge": ">=0.2.5"
   },
   "dependencies": {
-    "inherits": "^2.0.1",
-    "request": "2.85.x",
-    "yamaha-nodejs": "git://github.com/NorthernMan54/yamaha-nodejs.git",
     "bonjour": "^=3.5.0",
+    "core-util-is": "^1.0.1",
+    "debug": "^2.2.0",
+    "inherits": "^2.0.1",
     "ip": "^=1.1.5",
     "q": "1.4.x",
-    "debug": "^2.2.0",
-    "core-util-is": "^1.0.1",
-    "util": "^0.10.x"
+    "request": "2.85.x",
+    "util": "^0.10.x",
+    "yamaha-nodejs": "git://github.com/NorthernMan54/yamaha-nodejs.git"
   },
   "author": "neonightmare <neonightmare@gmail.com> (https://github.com/neonightmare)",
   "license": "ISC",
