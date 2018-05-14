@@ -67,20 +67,11 @@ config.json
       "manual_addresses": {
           "Yamaha": "192.168.1.115"
       }
-<<<<<<< HEAD
     }
   ],
-
-    "accessories": [
-        {},
-        {}
-=======
-     }
-    ],
   "accessories": [
       {},
       {}
->>>>>>> d834fb529a1d26083d1fb3da1e755b744166b0c8
     ]
 }
 ```
