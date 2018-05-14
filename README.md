@@ -62,10 +62,18 @@ Example:
                 "setInputTo": "HDMI2"
            }
         }
+<<<<<<< HEAD
       },
       "manual_addresses": {
           "Yamaha": "192.168.1.115"
       }
+=======
+    ],
+    "accessories": [
+        {},
+        {}
+    ]
+>>>>>>> parent of ad15af1... Typo In readme
     }
   ],
   "accessories": [
