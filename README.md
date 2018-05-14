@@ -32,7 +32,8 @@ config.json
 
 Example:
 
-```json
+```
+config.json
 {
     "bridge": {
         "name": "Homebridge",
@@ -55,8 +56,12 @@ Example:
         }
     ],
     "accessories": [
-        {},
         {}
     ]
     }
 ```
+
+# Credits
+
+* neonightmare - Creating the original plugin
+* TommyCardello - Adding Party mode switch
