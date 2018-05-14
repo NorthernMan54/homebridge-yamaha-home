@@ -32,7 +32,8 @@ config.json
 
 Example:
 
-```json
+```
+config.json
 {
     "bridge": {
         "name": "Homebridge",
@@ -66,12 +67,25 @@ Example:
       "manual_addresses": {
           "Yamaha": "192.168.1.115"
       }
+<<<<<<< HEAD
     }
   ],
 
     "accessories": [
         {},
         {}
+=======
+     }
+    ],
+  "accessories": [
+      {},
+      {}
+>>>>>>> d834fb529a1d26083d1fb3da1e755b744166b0c8
     ]
 }
 ```
+
+# Credits
+
+* neonightmare - Creating the original plugin
+* TommyCardello - Adding Party mode switch, Adding Input Switches.
