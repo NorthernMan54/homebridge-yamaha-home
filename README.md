@@ -29,6 +29,7 @@ config.json
 - preset_num - Names the switch the number of the preset, defaults to false ( true/false ). Otherwise the name is the frequency. ( useful with Siri and Alexa )
 - zone - Zone name
 - party_switch - You can choose whether you need Party Mode Switch or not. "party_switch": "yes" if needed or don't add this property if you don't need the switch.
+- inputs_as_accessories - If property exists, Input switches will be created. Checkout a config for example.
 
 Example:
 
@@ -43,25 +44,39 @@ config.json
     },
     "description": "This is an example configuration file for homebridge plugin for yamaha AVR",
     "hint": "Always paste into jsonlint.com validation page before starting your homebridge, saves a lot of frustration",
-    "platforms": [
-        {
-            "platform": "yamaha-home",
-            "play_volume": -48,
-            "setMainInputTo": "Airplay",
-            "show_input_name": "yes",
-            "party_switch": "yes",
-            "manual_addresses": {
-                "Yamaha": "192.168.1.115"
-            }
+    
+  "platforms": [
+    {
+      "platform": "yamaha-home",
+      "play_volume": -48,
+      "setMainInputTo": "Airplay",
+      "show_input_name": "yes",
+      "party_switch": "yes",
+      "inputs_as_accessories":{
+        "YamahaReceiver": {
+          "1": {
+                "name":"Raspberry",
+                "setInputTo": "HDMI1"
+           },
+          "2": {
+                "name":"AppleTV",
+                "setInputTo": "HDMI2"
+           }
         }
-    ],
-    "accessories": [
-        {}
-    ]
+      },
+      "manual_addresses": {
+          "Yamaha": "192.168.1.115"
+      }
     }
+  ],
+  "accessories": [
+      {},
+      {}
+    ]
+}
 ```
 
 # Credits
 
 * neonightmare - Creating the original plugin
-* TommyCardello - Adding Party mode switch
+* TommyCardello - Adding Party mode switch, Adding Input Switches.
