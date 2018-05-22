@@ -30,6 +30,8 @@ config.json
 - zone - Zone name
 - party_switch - You can choose whether you need Party Mode Switch or not. "party_switch": "yes" if needed or don't add this property if you don't need the switch.
 - inputs_as_accessories - If property exists, Input switches will be created. Checkout a config for example.
+– set_scene –  If property exists, Scene switch will be created. Checkout a config for example.
+
 
 Example:
 
@@ -61,7 +63,13 @@ config.json
           "2": {
                 "name":"AppleTV",
                 "setInputTo": "HDMI2"
-           }
+           },
+           "3": {
+            "name": "Scene 3",
+            "set_scene": "3",
+            "setInputTo": "HDMI3",
+            "set_default_volume": -49
+          }
         }
       },
       "manual_addresses": {

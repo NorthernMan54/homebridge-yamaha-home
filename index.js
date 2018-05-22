@@ -326,7 +326,7 @@ YamahaParty.prototype = {
   }
 };
 
-// Inputs Switches. 
+// Inputs Switches or Scenes. 
 function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.log = log;
   this.config = config;
@@ -348,6 +348,7 @@ function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.showInputName = config["show_input_name"] || "no";
 
   this.setInputTo = config["setInputTo"] || config["setMainInputTo"];
+  this.setScene = config["set_scene"] || {};   //Scene Feature
   this.log("Adding Input Switch %s", name);
 }
 
@@ -387,9 +388,12 @@ YamahaInputService.prototype = {
       if (on) {
           var that = this;
           this.yamaha.powerOn().then(function() {
-            that.yamaha.setMainInputTo(that.setInputTo).then(function() {
-              that.yamaha.setVolumeTo(that.setDefaultVolume * 10, this.zone).then(function() {
-                callback(null, true);
+            that.yamaha.setMainInputTo(that.setInputTo).then(function() { //If set_scene exists, this will set the scene
+              that.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Load>Scene ' + that.setScene + '</Scene_Load></Scene></Main_Zone></YAMAHA_AV>').then(function() {
+                //This will set the input
+                that.yamaha.setVolumeTo(that.setDefaultVolume * 10, this.zone).then(function() {
+                  callback(null, true);
+                });
               });
             });
           });
