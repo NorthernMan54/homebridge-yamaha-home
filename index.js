@@ -326,7 +326,9 @@ YamahaParty.prototype = {
   }
 };
 
+
 // Inputs or Scenes as additional Switches. 
+
 function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.log = log;
   this.config = config;

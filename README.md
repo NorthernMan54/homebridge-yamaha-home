@@ -48,7 +48,7 @@ Example config.json:
     },
     "description": "This is an example configuration file for homebridge plugin for yamaha AVR",
     "hint": "Always paste into jsonlint.com validation page before starting your homebridge, saves a lot of frustration",
-    
+     
   "platforms": [
     {
       "platform": "yamaha-home",
