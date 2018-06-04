@@ -28,15 +28,17 @@ config.json
 - radio_presets - Create a switch for each radio preset, defaults to false ( true/false )
 - preset_num - Names the switch the number of the preset, defaults to false ( true/false ). Otherwise the name is the frequency. ( useful with Siri and Alexa )
 - zone - Zone name
+
+Optional Properties:
 - party_switch - You can choose whether you need Party Mode Switch or not. "party_switch": "yes" if needed or don't add this property if you don't need the switch.
-- inputs_as_accessories - If property exists, Input switches will be created. Checkout a config for example.
-– set_scene –  If property exists, Scene switch will be created. Checkout a config for example.
+- inputs_as_accessories - If property exists, Input or Scene switch will be created. Checkout a config for an example.
+- YamahaReceiver - Here should be your yamaha recevier network name. Additional switches won't work with a wrong receiver name.
+- set_scene –  If property exists, Scene switch will be created. Checkout a config for example.
+- setInputTo - use this property to specify input for switch. Also, add this property if you want a scene switch (use the same input name as in your receiver scene settings).
 
 
-Example:
-
-```
-config.json
+Example config.json:
+```json
 {
     "bridge": {
         "name": "Homebridge",
@@ -58,17 +60,17 @@ config.json
         "YamahaReceiver": {
           "1": {
                 "name":"Raspberry",
-                "setInputTo": "HDMI1"
+                "setInputTo": "HDMI1",
+                "set_default_volume": -49
            },
           "2": {
                 "name":"AppleTV",
                 "setInputTo": "HDMI2"
            },
            "3": {
-            "name": "Scene 3",
-            "set_scene": "3",
-            "setInputTo": "HDMI3",
-            "set_default_volume": -49
+                "name": "Scene 3",
+                "set_scene": "3",
+                "setInputTo": "HDMI3"
           }
         }
       },
@@ -87,4 +89,4 @@ config.json
 # Credits
 
 * neonightmare - Creating the original plugin
-* TommyCardello - Adding Party mode switch, Adding Input Switches.
+* TommyCardello - Adding Party Mode Switch, Adding Input or Scene Switches.

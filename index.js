@@ -326,7 +326,7 @@ YamahaParty.prototype = {
   }
 };
 
-// Inputs Switches or Scenes. 
+// Inputs or Scenes as additional Switches. 
 function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.log = log;
   this.config = config;
@@ -375,7 +375,7 @@ YamahaInputService.prototype = {
                 // that.log(result) //This logs the current Input. Needed for testing.
                 // Conditional statement below checks the current input. If input 1 is active, all other inputs in Home App become not active.
                 // When swithing input from 1 to 3, input 3 becomes active and input 1 becomes not active. (input numbers are for example)
-                if (result !== that.setInputTo) {
+                if (result !== that.setInputTo) { 
                   //that.log("Current Input: " + result + "!== to Button input:" + that.setInputTo). Needed for testing.
                   callback(null, false);
                 } else if (result === that.setInputTo) {
@@ -389,6 +389,7 @@ YamahaInputService.prototype = {
           var that = this;
           this.yamaha.powerOn().then(function() {
             that.yamaha.setMainInputTo(that.setInputTo).then(function() { //If set_scene exists, this will set the scene
+              //This will set the scene
               that.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Load>Scene ' + that.setScene + '</Scene_Load></Scene></Main_Zone></YAMAHA_AV>').then(function() {
                 //This will set the input
                 that.yamaha.setVolumeTo(that.setDefaultVolume * 10, this.zone).then(function() {
