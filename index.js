@@ -402,9 +402,7 @@ YamahaInputService.prototype = {
           });
         }
         else {
-          this.yamaha.powerOff().then(function() {
-            callback(null, false);
-          });
+          callback(null, false);
         }
     }.bind(this));
 
