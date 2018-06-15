@@ -392,7 +392,7 @@ YamahaInputService.prototype = {
           this.yamaha.powerOn().then(function() {
             that.yamaha.setMainInputTo(that.setInputTo).then(function() { //If set_scene exists, this will set the scene
               //This will set the scene
-              that.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Load>Scene ' + that.setScene + '</Scene_Load></Scene></Main_Zone></YAMAHA_AV>').then(function() {
+              that.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ' + that.setScene + '</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>').then(function() {
                 //This will set the input
                 that.yamaha.setVolumeTo(that.setDefaultVolume * 10, this.zone).then(function() {
                   callback(null, true);
@@ -402,9 +402,7 @@ YamahaInputService.prototype = {
           });
         }
         else {
-          this.yamaha.powerOff().then(function() {
-            callback(null, false);
-          });
+          callback(null, false);
         }
     }.bind(this));
 
