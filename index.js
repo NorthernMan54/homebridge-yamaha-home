@@ -66,6 +66,7 @@ function YamahaAVRPlatform(log, config) {
   this.radioPresets = config["radio_presets"] || false;
   this.presetNum = config["preset_num"] || false;
   this.manualAddresses = config["manual_addresses"] || {};
+  this.spotifyControls = config["spotify"] || false;
   //this.partySwitch is nessesary for optional Party Mode Switch
   this.partySwitch = config["party_switch"];
   //this.inputAccessories is nessesary for optional Inputs Switches
@@ -187,25 +188,30 @@ function setupFromService(service) {
         // Conditional statement. If we have any inputs in config.json property "inputs_as_accessories" this will create those switches.
         // Functionality added via YamahaInputService contructor function
         if (this.inputAccessories.hasOwnProperty("YamahaReceiver")) {
-            for (var key in this.inputAccessories) {
-                var inputs = this.inputAccessories[key];
-                for (var key in inputs) {
-                    var inputConfig = inputs[key];
-                    var input = parseInt(key);
-                    var accname = inputConfig["name"];
-                    this.log.info("Making accessory \"" + accname + "\" for input " + input );
-                    var accessory = new YamahaInputService(this.log, inputConfig, accname, yamaha, sysConfig, input);
-                    accessories.push(accessory);
-                    if(accessories.length >= this.expectedDevices)
-                        timeoutFunction(); // We're done, call the timeout function now.
-                }
+          for (var key in this.inputAccessories) {
+            var inputs = this.inputAccessories[key];
+            for (var key in inputs) {
+              var inputConfig = inputs[key];
+              var input = parseInt(key);
+              var accname = inputConfig["name"];
+              this.log.info("Making accessory \"" + accname + "\" for input " + input);
+              var accessory = new YamahaInputService(this.log, inputConfig, accname, yamaha, sysConfig, input);
+              accessories.push(accessory);
+              if (accessories.length >= this.expectedDevices)
+                timeoutFunction(); // We're done, call the timeout function now.
             }
+          }
         }
 
         //Adding accessory with YamahaParty Switch.
         //Depends on "party_switch" property in config.json. if "yes" => Party Mode Switch exists.
         if (this.partySwitch === 'yes') {
           var accessory = new YamahaParty(this.log, this.config, name, yamaha, sysConfig);
+          accessories.push(accessory);
+        }
+
+        if (this.spotifyControls) {
+          var accessory = new YamahaSpotify(this.log, this.config, name, yamaha, sysConfig);
           accessories.push(accessory);
         }
 
@@ -305,15 +311,15 @@ YamahaParty.prototype = {
       .on('get', function(callback) {
         const that = this;
         this.yamaha.isPartyModeEnabled().then(function(result) {
-            callback(null, result);
-          });
+          callback(null, result);
+        });
       }.bind(this))
       .on('set', function(on, callback) {
         if (on) {
           const that = this;
           this.yamaha.powerOn().then(function() {
             that.yamaha.partyModeOn().then(function() {
-                callback(null, true);
+              callback(null, true);
             });
           });
         } else {
@@ -326,8 +332,86 @@ YamahaParty.prototype = {
   }
 };
 
+//Party Mode Switch
+function YamahaSpotify(log, config, name, yamaha, sysConfig) {
+  this.log = log;
+  this.config = config;
+  this.yamaha = yamaha;
+  this.sysConfig = sysConfig;
 
-// Inputs or Scenes as additional Switches. 
+  this.nameSuffix = config["name_suffix"] || " Party Mode";
+  this.zone = config["zone"] || 1;
+  this.name = "Spotify Mode";
+  this.serviceName = name;
+  this.setMainInputTo = config["setMainInputTo"];
+  this.playVolume = this.config["play_volume"];
+  this.minVolume = config["min_volume"] || -65.0;
+  this.maxVolume = config["max_volume"] || -10.0;
+  this.gapVolume = this.maxVolume - this.minVolume;
+  this.showInputName = config["show_input_name"] || "no";
+
+  this.log("Adding spotify Switch %s", name);
+}
+
+YamahaSpotify.prototype = {
+
+  getServices: function() {
+    var that = this;
+    var informationService = new Service.AccessoryInformation();
+    var yamaha = this.yamaha;
+
+    informationService
+      .setCharacteristic(Characteristic.Name, this.name)
+      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
+      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
+      .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
+
+    var spotifyPlay = new Service.Switch("Spotify Play");
+    spotifyPlay.getCharacteristic(Characteristic.On)
+      .on('set', function(on, callback) {
+        if (on) {
+          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play</Playback></Play_Control></Spotify></YAMAHA_AV>');
+        }
+      }.bind(this));
+
+    var spotifyPause = new Service.Switch("Spotify Pause");
+    spotifyPause.getCharacteristic(Characteristic.On)
+      .on('set', function(on, callback) {
+        if (on) {
+          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Pause</Playback></Play_Control></Spotify></YAMAHA_AV>');
+        }
+      }.bind(this));
+
+    var spotifySkip = new Service.Switch("Spotify Skip");
+    spotifySkip.getCharacteristic(Characteristic.On)
+      .on('set', function(on, callback) {
+        if (on) {
+          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Skip</Playback></Play_Control></Spotify></YAMAHA_AV>');
+        }
+      }.bind(this));
+
+    var spotifyRewind = new Service.Switch("Spotify Rewind");
+    spotifyRewind.getCharacteristic(Characteristic.On)
+      .on('set', function(on, callback) {
+        if (on) {
+          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Rewind</Playback></Play_Control></Spotify></YAMAHA_AV>');
+        }
+      }.bind(this));
+
+    var spotifyStop = new Service.Switch("Spotify Stop");
+    spotifyStop.getCharacteristic(Characteristic.On)
+      .on('set', function(on, callback) {
+        if (on) {
+          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Stop</Playback></Play_Control></Spotify></YAMAHA_AV>');
+        }
+      }.bind(this));
+      
+    return [informationService, spotifyPlay, spotifyPause, spotifySkip, spotifyRewind, spotifyStop];
+  }
+};
+
+// Inputs or Scenes as additional Switches.
 
 function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.log = log;
@@ -350,7 +434,7 @@ function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.showInputName = config["show_input_name"] || "no";
 
   this.setInputTo = config["setInputTo"] || config["setMainInputTo"];
-  this.setScene = config["set_scene"] || {};   //Scene Feature
+  this.setScene = config["set_scene"] || {}; //Scene Feature
   this.log("Adding Input Switch %s", name);
 }
 
@@ -371,23 +455,24 @@ YamahaInputService.prototype = {
 
     var inputSwitchService = new Service.Switch(this.name);
     inputSwitchService.getCharacteristic(Characteristic.On)
-    .on('get', function(callback, context){
-          this.yamaha.getCurrentInput().then(
-              function(result){
-                // that.log(result) //This logs the current Input. Needed for testing.
-                // Conditional statement below checks the current input. If input 1 is active, all other inputs in Home App become not active.
-                // When swithing input from 1 to 3, input 3 becomes active and input 1 becomes not active. (input numbers are for example)
-                if (result !== that.setInputTo) { 
-                  //that.log("Current Input: " + result + "!== to Button input:" + that.setInputTo). Needed for testing.
-                  callback(null, false);
-                } else if (result === that.setInputTo) {
-                  callback(null, true);
-                  //that.log("Current Input: " + result + "=== to Button input:" + that.setInputTo). Needed for testing.
-                }
-              }
-            )}.bind(this))
-    .on('set', function(on, callback) {
-      if (on) {
+      .on('get', function(callback, context) {
+        this.yamaha.getCurrentInput().then(
+          function(result) {
+            // that.log(result) //This logs the current Input. Needed for testing.
+            // Conditional statement below checks the current input. If input 1 is active, all other inputs in Home App become not active.
+            // When swithing input from 1 to 3, input 3 becomes active and input 1 becomes not active. (input numbers are for example)
+            if (result !== that.setInputTo) {
+              //that.log("Current Input: " + result + "!== to Button input:" + that.setInputTo). Needed for testing.
+              callback(null, false);
+            } else if (result === that.setInputTo) {
+              callback(null, true);
+              //that.log("Current Input: " + result + "=== to Button input:" + that.setInputTo). Needed for testing.
+            }
+          }
+        )
+      }.bind(this))
+      .on('set', function(on, callback) {
+        if (on) {
           var that = this;
           this.yamaha.powerOn().then(function() {
             that.yamaha.setMainInputTo(that.setInputTo).then(function() { //If set_scene exists, this will set the scene
@@ -400,11 +485,10 @@ YamahaInputService.prototype = {
               });
             });
           });
-        }
-        else {
+        } else {
           callback(null, false);
         }
-    }.bind(this));
+      }.bind(this));
 
     return [informationService, inputSwitchService];
   }

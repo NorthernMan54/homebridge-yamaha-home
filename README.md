@@ -35,6 +35,7 @@ Optional Properties:
 - YamahaReceiver - Here should be your yamaha recevier network name. Additional switches won't work with a wrong receiver name.
 - set_scene –  If property exists, Scene switch will be created. Checkout a config for example.
 - setInputTo - use this property to specify input for switch. Also, add this property if you want a scene switch (use the same input name as in your receiver scene settings).
+- spotify - Enable spotify control buttons
 
 
 Example config.json:
@@ -48,7 +49,7 @@ Example config.json:
     },
     "description": "This is an example configuration file for homebridge plugin for yamaha AVR",
     "hint": "Always paste into jsonlint.com validation page before starting your homebridge, saves a lot of frustration",
-     
+
   "platforms": [
     {
       "platform": "yamaha-home",
