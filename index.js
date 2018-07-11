@@ -210,8 +210,13 @@ function setupFromService(service) {
           accessories.push(accessory);
         }
 
+        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Skip Fwd</Playback></Play_Control></Spotify></YAMAHA_AV>
+        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Skip Rev</Playback></Play_Control></Spotify></YAMAHA_AV>
+        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Pause</Playback></Play_Control></Spotify></YAMAHA_AV>
+        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play</Playback></Play_Control></Spotify></YAMAHA_AV>
+
         if (this.spotifyControls) {
-          var buttons = ["Play", "Pause", "Skip", "Rewind", "Stop"];
+          var buttons = ["Play", "Pause", "Skip Fwd", "Skip Rev"];
           for (i = 0, len = buttons.length; i < len; i++) {
             var accessory = new YamahaSpotify(this.log, this.config, buttons[i], yamaha, sysConfig);
             accessories.push(accessory);
@@ -347,7 +352,7 @@ function YamahaSpotify(log, config, name, yamaha, sysConfig) {
 
   this.nameSuffix = config["name_suffix"] || " Party Mode";
   this.zone = config["zone"] || 1;
-  this.name = "Spotify "+name;
+  this.name = "Spotify " + name;
   this.serviceName = name;
   this.setMainInputTo = config["setMainInputTo"];
   this.playVolume = this.config["play_volume"];
@@ -362,7 +367,6 @@ function YamahaSpotify(log, config, name, yamaha, sysConfig) {
 YamahaSpotify.prototype = {
 
   getServices: function() {
-    var that = this;
     var informationService = new Service.AccessoryInformation();
     var yamaha = this.yamaha;
 
@@ -374,10 +378,14 @@ YamahaSpotify.prototype = {
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var spotifyButton = new Service.Switch(this.name);
+    this.spotifyButton = spotifyButton;
     spotifyButton.getCharacteristic(Characteristic.On)
       .on('set', function(on, callback) {
-        if (on) {
-          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>'+this.serviceName+'</Playback></Play_Control></Spotify></YAMAHA_AV>');
+        if (on) { // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play                </Playback></Play_Control></Spotify></YAMAHA_AV>
+          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>' + this.serviceName + '</Playback></Play_Control></Spotify></YAMAHA_AV>');
+          setTimeout(function() {
+            this.spotifyButton.setCharacteristic(Characteristic.On, 0);
+          }.bind(this), 1 * 1000); // After 1 second turn off
         }
       }.bind(this));
 
