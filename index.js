@@ -211,9 +211,15 @@ function setupFromService(service) {
         }
 
         if (this.spotifyControls) {
-          var accessory = new YamahaSpotify(this.log, this.config, name, yamaha, sysConfig);
-          accessories.push(accessory);
+          var buttons = ["Play", "Pause", "Skip", "Rewind", "Stop"];
+          for (i = 0, len = buttons.length; i < len; i++) {
+            var accessory = new YamahaSpotify(this.log, this.config, buttons[i], yamaha, sysConfig);
+            accessories.push(accessory);
+          }
+
+
         }
+
 
         yamaha.getAvailableZones().then(
           function(zones) {
@@ -341,7 +347,7 @@ function YamahaSpotify(log, config, name, yamaha, sysConfig) {
 
   this.nameSuffix = config["name_suffix"] || " Party Mode";
   this.zone = config["zone"] || 1;
-  this.name = "Spotify Mode";
+  this.name = "Spotify "+name;
   this.serviceName = name;
   this.setMainInputTo = config["setMainInputTo"];
   this.playVolume = this.config["play_volume"];
@@ -350,7 +356,7 @@ function YamahaSpotify(log, config, name, yamaha, sysConfig) {
   this.gapVolume = this.maxVolume - this.minVolume;
   this.showInputName = config["show_input_name"] || "no";
 
-  this.log("Adding spotify Switch %s", name);
+  this.log("Adding spotify button %s", name);
 }
 
 YamahaSpotify.prototype = {
@@ -367,47 +373,15 @@ YamahaSpotify.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
-    var spotifyPlay = new Service.Switch("Spotify Play");
+    var spotifyButton = new Service.Switch(this.name);
     spotifyPlay.getCharacteristic(Characteristic.On)
       .on('set', function(on, callback) {
         if (on) {
-          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play</Playback></Play_Control></Spotify></YAMAHA_AV>');
+          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>'+this.serviceName+'</Playback></Play_Control></Spotify></YAMAHA_AV>');
         }
       }.bind(this));
 
-    var spotifyPause = new Service.Switch("Spotify Pause");
-    spotifyPause.getCharacteristic(Characteristic.On)
-      .on('set', function(on, callback) {
-        if (on) {
-          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Pause</Playback></Play_Control></Spotify></YAMAHA_AV>');
-        }
-      }.bind(this));
-
-    var spotifySkip = new Service.Switch("Spotify Skip");
-    spotifySkip.getCharacteristic(Characteristic.On)
-      .on('set', function(on, callback) {
-        if (on) {
-          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Skip</Playback></Play_Control></Spotify></YAMAHA_AV>');
-        }
-      }.bind(this));
-
-    var spotifyRewind = new Service.Switch("Spotify Rewind");
-    spotifyRewind.getCharacteristic(Characteristic.On)
-      .on('set', function(on, callback) {
-        if (on) {
-          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Rewind</Playback></Play_Control></Spotify></YAMAHA_AV>');
-        }
-      }.bind(this));
-
-    var spotifyStop = new Service.Switch("Spotify Stop");
-    spotifyStop.getCharacteristic(Characteristic.On)
-      .on('set', function(on, callback) {
-        if (on) {
-          this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Stop</Playback></Play_Control></Spotify></YAMAHA_AV>');
-        }
-      }.bind(this));
-      
-    return [informationService, spotifyPlay, spotifyPause, spotifySkip, spotifyRewind, spotifyStop];
+    return [informationService, spotifyButton];
   }
 };
 
