@@ -374,7 +374,7 @@ YamahaSpotify.prototype = {
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var spotifyButton = new Service.Switch(this.name);
-    spotifyPlay.getCharacteristic(Characteristic.On)
+    spotifyButton.getCharacteristic(Characteristic.On)
       .on('set', function(on, callback) {
         if (on) {
           this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>'+this.serviceName+'</Playback></Play_Control></Spotify></YAMAHA_AV>');
