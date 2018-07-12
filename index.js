@@ -381,12 +381,14 @@ YamahaSpotify.prototype = {
     this.spotifyButton = spotifyButton;
     spotifyButton.getCharacteristic(Characteristic.On)
       .on('set', function(on, callback) {
+        debug("Spotify Control", this.serviceName);
         if (on) { // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play                </Playback></Play_Control></Spotify></YAMAHA_AV>
           this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>' + this.serviceName + '</Playback></Play_Control></Spotify></YAMAHA_AV>');
           setTimeout(function() {
             this.spotifyButton.setCharacteristic(Characteristic.On, 0);
           }.bind(this), 1 * 1000); // After 1 second turn off
         }
+        callback(null, on);
       }.bind(this));
 
     return [informationService, spotifyButton];
