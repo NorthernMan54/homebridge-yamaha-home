@@ -438,6 +438,7 @@ YamahaInputService.prototype = {
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var inputSwitchService = new Service.Switch(this.name);
+    this.inputSwitchService = inputSwitchService;
     inputSwitchService.getCharacteristic(Characteristic.On)
       .on('get', function(callback, context) {
         this.yamaha.getCurrentInput().then(
@@ -472,6 +473,9 @@ YamahaInputService.prototype = {
         } else {
           callback(null, false);
         }
+        setTimeout(function() {
+          this.inputSwitchService.setCharacteristic(Characteristic.On, 0);
+        }.bind(this), 1 * 1000); // After 1 second turn off
       }.bind(this));
 
     return [informationService, inputSwitchService];
