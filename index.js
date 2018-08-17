@@ -221,8 +221,6 @@ function setupFromService(service) {
             var accessory = new YamahaSpotify(this.log, this.config, buttons[i], yamaha, sysConfig);
             accessories.push(accessory);
           }
-
-
         }
 
 
@@ -608,7 +606,7 @@ YamahaZone.prototype = {
 
     informationService
       .setCharacteristic(Characteristic.Name, this.name)
-      .setCharacteristic(Characteristic.Manufacturer, "Yamaha")
+      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
@@ -713,7 +711,7 @@ YamahaAVRAccessory.prototype = {
 
     informationService
       .setCharacteristic(Characteristic.Name, this.name)
-      .setCharacteristic(Characteristic.Manufacturer, "Yamaha")
+      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
