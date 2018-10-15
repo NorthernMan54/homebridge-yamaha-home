@@ -229,7 +229,7 @@ function setupFromService(service) {
             // Only add zones control if more than 1 zone
             // Hack to always create a zone control
             // TODO: Remove if block
-            if (zones.length > 0) {
+            if (zones.length > 1) {
               for (var zone in zones) {
 
                 yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
