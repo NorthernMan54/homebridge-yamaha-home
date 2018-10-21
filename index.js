@@ -182,8 +182,8 @@ function setupFromService(service) {
         sysIds[sysId] = true;
         this.log("Found Yamaha " + sysModel + " - " + sysId + ", \"" + name + "\"");
 
-        var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
-        accessories.push(accessory);
+        //var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
+        //accessories.push(accessory);
 
         // Conditional statement. If we have any inputs in config.json property "inputs_as_accessories" this will create those switches.
         // Functionality added via YamahaInputService contructor function
@@ -229,7 +229,7 @@ function setupFromService(service) {
             // Only add zones control if more than 1 zone
             // Hack to always create a zone control
             // TODO: Remove if block
-            if (zones.length > 1) {
+            if (zones.length > 0) {
               for (var zone in zones) {
 
                 yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
