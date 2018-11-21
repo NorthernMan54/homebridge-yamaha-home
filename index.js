@@ -71,6 +71,7 @@ function YamahaAVRPlatform(log, config) {
   this.partySwitch = config["party_switch"];
   //this.inputAccessories is nessesary for optional Inputs Switches
   this.inputAccessories = config["inputs_as_accessories"] || {};
+  this.zoneControllersOnlyFor = config["zone_controllers_only_for"] || null;
 }
 
 // Custom Characteristics and service...
@@ -231,7 +232,6 @@ function setupFromService(service) {
             // TODO: Remove if block
             if (zones.length > 0) {
               for (var zone in zones) {
-
                 yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
                   if (basicInfo.getVolume() != -999) {
 
@@ -239,9 +239,11 @@ function setupFromService(service) {
                       function(zoneInfo) {
                         var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
                         zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
-                        this.log("Adding zone controller for", zoneName);
-                        var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z);
-                        accessories.push(accessory);
+                        if (this.zoneControllersOnlyFor == null || this.zoneControllersOnlyFor.includes(zoneName)) {
+                          this.log("Adding zone controller for", zoneName);
+                          var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z);
+                          accessories.push(accessory);
+                        }
                       }.bind(this)
                     );
 
