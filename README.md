@@ -28,6 +28,7 @@ config.json
 - radio_presets - Create a switch for each radio preset, defaults to false ( true/false )
 - preset_num - Names the switch the number of the preset, defaults to false ( true/false ). Otherwise the name is the frequency. ( useful with Siri and Alexa )
 - zone - Zone name
+- zone_controllers_only_for - A list of zone names for which an accessory is to be created. If no value for this key is provided, then accessories for all available zones are created.
 
 Optional Properties:
 - party_switch - You can choose whether you need Party Mode Switch or not. "party_switch": "yes" if needed or don't add this property if you don't need the switch.
