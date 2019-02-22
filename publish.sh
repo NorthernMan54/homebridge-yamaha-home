@@ -1,8 +1,8 @@
 #! /bin/sh
 
 if npm audit; then
-  rm *orig* *toc\.*
-  npm run-script document
+#  rm *orig* *toc\.*
+#  npm run-script document
   npm version patch -m "$1"
   git add .
   git commit -m "$1"
