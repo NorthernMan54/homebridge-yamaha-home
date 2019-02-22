@@ -29,7 +29,7 @@
     "q": "1.4.x",
     "request": "2.85.x",
     "util": "^0.10.x",
-    "yamaha-nodejs": ">=0.8.0"
+    "yamaha-nodejs": "git://github.com/NorthernMan54/yamaha-nodejs.git"
   },
   "author": "neonightmare <neonightmare@gmail.com> (https://github.com/neonightmare)",
   "license": "ISC",
