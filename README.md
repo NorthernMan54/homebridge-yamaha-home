@@ -3,7 +3,7 @@
 [![NPM Downloads](https://img.shields.io/npm/dm/homebridge-yamaha-home.svg?style=flat)](https://npmjs.org/package/homebridge-yamaha-home)
 
 
-homebridge-plugin for Yamaha AVR control with Apple-Homekit.  Optimized for use with the Apple Home App and with homebridge-alexa
+homebridge-plugin for Yamaha AVR control with Apple-Homekit.  Optimized for use with the Apple Home App and with homebridge-alexa.  Creates a Fan for each zone with the Fan speed being the volume. ( I was originally using light bulbs, but switched as Siri and Alexa were turning off the stereo when you asked her to turn off all the lights.)
 
 # Installation
 
@@ -15,7 +15,7 @@ sudo npm install -g homebridge-yamaha-home
 
 # Configuration
 
-config.json
+## config.json
 
 - play_volume - Sets volume to this when turning on, defaults to -48
 - min_volume -
@@ -38,6 +38,14 @@ Optional Properties:
 - setInputTo - use this property to specify input for switch. Also, add this property if you want a scene switch (use the same input name as in your receiver scene settings).
 - spotify - Enable spotify control buttons
 
+## Basic config.json config
+
+"platforms": [{
+  "platform": "yamaha-home",
+  "max_volume": 10
+}
+
+## Example advanced configuration
 
 Example config.json:
 ```json
@@ -82,7 +90,6 @@ Example config.json:
     }
   ],
   "accessories": [
-      {},
       {}
     ]
 }
