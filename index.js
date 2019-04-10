@@ -226,8 +226,12 @@ function setupFromService(service) {
                   if (basicInfo.getVolume() !== -999) {
                     yamaha.getZoneConfig(basicInfo.getZone()).then(
                       function(zoneInfo) {
-                        var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
-                        var zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
+                        if (zoneInfo) {
+                          var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
+                          var zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
+                        } else {
+                          var zoneName = "Main_Zone";
+                        }
                         if (this.zoneControllersOnlyFor == null || this.zoneControllersOnlyFor.includes(zoneName)) {
                           this.log("Adding zone controller for", zoneName);
                           var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z);
