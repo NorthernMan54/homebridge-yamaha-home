@@ -64,6 +64,7 @@ function YamahaAVRPlatform(log, config) {
   this.presetNum = config["preset_num"] || false;
   this.manualAddresses = config["manual_addresses"] || {};
   this.spotifyControls = config["spotify"] || false;
+  this.nozones = config["nozones"] || false;
   // this.partySwitch is nessesary for optional Party Mode Switch
   this.partySwitch = config["party_switch"];
   // this.inputAccessories is nessesary for optional Inputs Switches
@@ -176,8 +177,10 @@ function setupFromService(service) {
         sysIds[sysId] = true;
         this.log("Found Yamaha " + sysModel + " - " + sysId + ", \"" + name + "\"");
 
-        // var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
-        // accessories.push(accessory);
+        if (this.nozones) {
+          var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
+          accessories.push(accessory);
+        }
 
         // Conditional statement. If we have any inputs in config.json property "inputs_as_accessories" this will create those switches.
         // Functionality added via YamahaInputService contructor function
@@ -220,7 +223,7 @@ function setupFromService(service) {
             // Only add zones control if more than 1 zone
             // Hack to always create a zone control
             // TODO: Remove if block
-            if (zones.length > 0) {
+            if (zones.length > 0 && !this.nozones) {
               for (var zone in zones) {
                 yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
                   if (basicInfo.getVolume() !== -999) {
