@@ -12,10 +12,9 @@ Configuration Sample:
 
 */
 
-// "use strict";
+"use strict";
 
-// var request = require("request");
-var Service, Characteristic, types, hapLegacyTypes;
+var Service, Characteristic, UUIDGen;
 var inherits = require('util').inherits;
 var debug = require('debug')('yamaha-home');
 var Yamaha = require('yamaha-nodejs');
@@ -28,7 +27,7 @@ var accessories = [];
 module.exports = function(homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
-  types = homebridge.hapLegacyTypes;
+  UUIDGen = homebridge.hap.uuid;
 
   fixInheritance(YamahaAVRPlatform.Input, Characteristic);
   fixInheritance(YamahaAVRPlatform.InputName, Characteristic);
@@ -111,8 +110,9 @@ YamahaAVRPlatform.prototype = {
       type: 'http'
     }, setupFromService.bind(this));
 
-    var timer, timeElapsed = 0,
-      checkCyclePeriod = 5000;
+    var timer = 0;
+    var timeElapsed = 0;
+    var checkCyclePeriod = 5000;
 
     // process manually specified devices...
     for (var key in this.manualAddresses) {
@@ -166,7 +166,7 @@ function setupFromService(service) {
   var yamaha = new Yamaha(service.host);
   yamaha.getSystemConfig().then(
     function(sysConfig) {
-      //  debug( JSON.stringify(sysConfig, null, 2));
+      // debug(JSON.stringify(sysConfig, null, 2));
       if (sysConfig && sysConfig.YAMAHA_AV) {
         var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
         var sysId = sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0];
@@ -194,8 +194,9 @@ function setupFromService(service) {
               this.log.info("Making accessory \"" + accname + "\" for input " + input);
               var accessory = new YamahaInputService(this.log, inputConfig, accname, yamaha, sysConfig, input);
               accessories.push(accessory);
-              if (accessories.length >= this.expectedDevices)
+              if (accessories.length >= this.expectedDevices) {
                 timeoutFunction(); // We're done, call the timeout function now.
+              }
             }
           }
         }
@@ -523,8 +524,8 @@ YamahaSwitch.prototype = {
     switchService.getCharacteristic(Characteristic.On)
       .on('get', function(callback, context) {
         yamaha.getBasicInfo().then(function(basicInfo) {
-          debug('Is On', basicInfo.isOn()); // True
-          debug('Input', basicInfo.getCurrentInput()); // Tuner
+          debug('YamahaSwitch Is On', basicInfo.isOn()); // True
+          debug('YamahaSwitch Input', basicInfo.getCurrentInput()); // Tuner
 
           if (basicInfo.isOn() && basicInfo.getCurrentInput() === 'TUNER') {
 
@@ -590,10 +591,13 @@ YamahaZone.prototype = {
         if (that.setMainInputTo) return yamaha.setMainInputTo(that.setMainInputTo);
         else return Q();
       }).then(function() {
-        if (that.setMainInputTo === "AirPlay") return yamaha.SendXMLToReceiver(
-          '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
-        );
-        else return Q();
+        if (that.setMainInputTo === "AirPlay") {
+          return yamaha.SendXMLToReceiver(
+            '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
+          );
+        } else {
+          return Q();
+        }
       });
     } else {
       return yamaha.powerOff(that.zone);
@@ -601,6 +605,7 @@ YamahaZone.prototype = {
   },
 
   getServices: function() {
+    var accessories = [];
     var that = this;
     var informationService = new Service.AccessoryInformation();
     var yamaha = this.yamaha;
@@ -612,8 +617,11 @@ YamahaZone.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
-    var zoneService = new Service.Fan(this.name);
-    zoneService.getCharacteristic(Characteristic.On)
+    accessories.push(informationService);
+
+    var zoneService = new Service.Television(this.name);
+    zoneService.setCharacteristic(Characteristic.ConfiguredName, this.name);
+    zoneService.getCharacteristic(Characteristic.Active)
       .on('get', function(callback, context) {
         yamaha.isOn(that.zone).then(
           function(result) {
@@ -632,31 +640,272 @@ YamahaZone.prototype = {
         });
       }.bind(this));
 
-    zoneService.addCharacteristic(new Characteristic.RotationSpeed())
-      .on('get', function(callback, context) {
+    zoneService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
+
+    yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+      debug('YamahaSwitch Is On', basicInfo.isOn()); // True
+      debug('YamahaSwitch Input', basicInfo.getCurrentInput());
+      zoneService.setCharacteristic(Characteristic.ActiveIdentifier, yamahaInputs.find(function(input) {
+        return (input.ConfiguredName === basicInfo.getCurrentInput() ? input : false);
+      }).Identifier);
+    });
+
+    zoneService
+      .getCharacteristic(Characteristic.ActiveIdentifier)
+      .on('get', function(callback) {
+        debug("getActiveIdentifier", that.zone);
         yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-          var v = basicInfo.getVolume() / 10.0;
-          var p = 100 * ((v - that.minVolume) / that.gapVolume);
-          p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
-          debug("Got volume percent of " + v + "%, " + p + "% ", that.zone);
-          callback(false, p);
-        }, function(error) {
-          callback(error, 0);
+          debug('YamahaSwitch Input', that.zone, basicInfo.getCurrentInput());
+          callback(null, yamahaInputs.find(function(input) {
+            return (input.ConfiguredName === basicInfo.getCurrentInput() ? input : false);
+          }).Identifier);
         });
+        // callback(null);
       })
-      .on('set', function(p, callback) {
-        var v = ((p / 100) * that.gapVolume) + that.minVolume;
-        v = Math.round(v) * 10.0;
-        debug("Setting volume to " + v + "%, " + p + "% ", that.zone);
-        yamaha.setVolumeTo(v, that.zone).then(function(response) {
-          debug("Success", response);
-          callback(false, p);
-        }, function(error) {
-          callback(error, volCx.value);
+      .on('set', function(newValue, callback) {
+        debug("setActiveIdentifier => setNewValue: ", that.zone, newValue);
+        yamaha.setInputTo(yamahaInputs.find(function(input) {
+          // debug("find %s === %s", input.Identifier, newValue);
+          return (input.Identifier === newValue ? input : false);
+        }).ConfiguredName, that.zone).then(function(a, b) {
+          debug("setActiveIdentifier", a, b);
+          callback();
         });
+        // callback(null);
       });
 
-    return [informationService, zoneService];
+    zoneService
+      .getCharacteristic(Characteristic.RemoteKey)
+      .on('set', function(newValue, callback) {
+        debug("setRemoteKey => setNewValue: " + newValue);
+        callback(null);
+      });
+
+    zoneService
+      .getCharacteristic(Characteristic.PictureMode)
+      .on('set', function(newValue, callback) {
+        debug("setPictureMode => setNewValue: " + newValue);
+        callback(null);
+      });
+
+    zoneService
+      .getCharacteristic(Characteristic.PowerModeSelection)
+      .on('set', function(newValue, callback) {
+        debug("setPowerModeSelection => setNewValue: " + newValue);
+        callback(null);
+      });
+
+    accessories.push(zoneService);
+    /*
+    Characteristic.InputSourceType.OTHER = 0;
+    Characteristic.InputSourceType.HOME_SCREEN = 1;
+    Characteristic.InputSourceType.TUNER = 2;
+    Characteristic.InputSourceType.HDMI = 3;
+    Characteristic.InputSourceType.COMPOSITE_VIDEO = 4;
+    Characteristic.InputSourceType.S_VIDEO = 5;
+    Characteristic.InputSourceType.COMPONENT_VIDEO = 6;
+    Characteristic.InputSourceType.DVI = 7;
+    Characteristic.InputSourceType.AIRPLAY = 8;
+    Characteristic.InputSourceType.USB = 9;
+    Characteristic.InputSourceType.APPLICATION = 10;
+    */
+    // I copied this out of the WebUI for my Receiver
+    var yamahaInputs = [{
+        ConfiguredName: "TUNER",
+        Identifier: 0,
+        InputSourceType: 2
+      },
+      {
+        ConfiguredName: "MULTI CH",
+        Identifier: 1,
+        InputSourceType: 0
+      },
+      {
+        ConfiguredName: "PHONO",
+        Identifier: 2,
+        InputSourceType: 2
+      },
+      {
+        ConfiguredName: "HDMI1",
+        Identifier: 3,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "HDMI2",
+        Identifier: 4,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "HDMI3",
+        Identifier: 5,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "HDMI4",
+        Identifier: 6,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "HDMI5",
+        Identifier: 7,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "HDMI6",
+        Identifier: 8,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "HDMI7",
+        Identifier: 9,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "AV1",
+        Identifier: 10,
+        InputSourceType: 7
+      },
+      {
+        ConfiguredName: "AV2",
+        Identifier: 11,
+        InputSourceType: 7
+      },
+      {
+        ConfiguredName: "AV3",
+        Identifier: 12,
+        InputSourceType: 7
+      },
+      {
+        ConfiguredName: "AV4",
+        Identifier: 13,
+        InputSourceType: 7
+      },
+      {
+        ConfiguredName: "AV5",
+        Identifier: 14,
+        InputSourceType: 7
+      },
+      {
+        ConfiguredName: "AV6",
+        Identifier: 15,
+        InputSourceType: 7
+      },
+      {
+        ConfiguredName: "AV7",
+        Identifier: 16,
+        InputSourceType: 7
+      },
+      {
+        ConfiguredName: "V-AUX",
+        Identifier: 17,
+        InputSourceType: 4
+      },
+      {
+        ConfiguredName: "AUDIO1",
+        Identifier: 18,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "AUDIO2",
+        Identifier: 19,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "AUDIO3",
+        Identifier: 20,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "AUDIO4",
+        Identifier: 21,
+        InputSourceType: 3
+      },
+      {
+        ConfiguredName: "USB/NET",
+        Identifier: 22,
+        InputSourceType: 9
+      },
+      {
+        ConfiguredName: "Rhapsody",
+        Identifier: 23,
+        InputSourceType: 10
+      },
+      {
+        ConfiguredName: "Napster",
+        Identifier: 24,
+        InputSourceType: 10
+      },
+      {
+        ConfiguredName: "SiriusXM",
+        Identifier: 25,
+        InputSourceType: 10
+      },
+      {
+        ConfiguredName: "Pandora",
+        Identifier: 26,
+        InputSourceType: 10
+      },
+      {
+        ConfiguredName: "Spotify",
+        Identifier: 27,
+        InputSourceType: 10
+      },
+      {
+        ConfiguredName: "AirPlay",
+        Identifier: 28,
+        InputSourceType: 8
+      },
+      {
+        ConfiguredName: "SERVER",
+        Identifier: 29,
+        InputSourceType: 10
+      },
+      {
+        ConfiguredName: "NET RADIO",
+        Identifier: 30,
+        InputSourceType: 10
+      },
+      {
+        ConfiguredName: "USB",
+        Identifier: 31,
+        InputSourceType: 9
+      },
+      {
+        ConfiguredName: "iPod (USB)",
+        Identifier: 32,
+        InputSourceType: 0
+      }
+    ];
+
+    yamahaInputs.forEach(function(input) {
+      debug("Adding input", this.name, input.ConfiguredName);
+      var inputService = new Service.InputSource(this.name + input.ConfiguredName, UUIDGen.generate(this.name + input.ConfiguredName), input.ConfiguredName);
+      inputService
+        .setCharacteristic(Characteristic.Identifier, input.Identifier)
+        .setCharacteristic(Characteristic.ConfiguredName, input.ConfiguredName)
+        .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
+        .setCharacteristic(Characteristic.InputSourceType, input.InputSourceType);
+
+      zoneService.addLinkedService(inputService);
+      accessories.push(inputService);
+      // debug(JSON.stringify(inputService, null, 2));
+    }.bind(this));
+
+    var speakerService = new Service.TelevisionSpeaker(this.name);
+
+    speakerService
+      .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
+      .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
+
+    speakerService.getCharacteristic(Characteristic.VolumeSelector)
+      .on('set', function(newValue, callback) {
+        debug("set VolumeSelector => setNewValue: " + newValue);
+        callback(null);
+      });
+
+    accessories.push(speakerService);
+
+    return accessories;
   }
 };
 
