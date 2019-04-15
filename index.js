@@ -17,6 +17,7 @@ Configuration Sample:
 var Service, Characteristic, UUIDGen;
 var inherits = require('util').inherits;
 var debug = require('debug')('yamaha-home');
+var util = require('./lib/util.js');
 var Yamaha = require('yamaha-nodejs');
 var Q = require('q');
 var bonjour = require('bonjour')();
@@ -645,7 +646,7 @@ YamahaZone.prototype = {
     yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
       debug('YamahaSwitch Is On', basicInfo.isOn()); // True
       debug('YamahaSwitch Input', basicInfo.getCurrentInput());
-      zoneService.setCharacteristic(Characteristic.ActiveIdentifier, yamahaInputs.find(function(input) {
+      zoneService.getCharacteristic(Characteristic.ActiveIdentifier).updateValue(util.Inputs.find(function(input) {
         return (input.ConfiguredName === basicInfo.getCurrentInput() ? input : false);
       }).Identifier);
     });
@@ -653,10 +654,10 @@ YamahaZone.prototype = {
     zoneService
       .getCharacteristic(Characteristic.ActiveIdentifier)
       .on('get', function(callback) {
-        debug("getActiveIdentifier", that.zone);
+        // debug("getActiveIdentifier", that.zone);
         yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-          debug('YamahaSwitch Input', that.zone, basicInfo.getCurrentInput());
-          callback(null, yamahaInputs.find(function(input) {
+          debug("getActiveIdentifier Input", that.zone, basicInfo.getCurrentInput());
+          callback(null, util.Inputs.find(function(input) {
             return (input.ConfiguredName === basicInfo.getCurrentInput() ? input : false);
           }).Identifier);
         });
@@ -664,7 +665,7 @@ YamahaZone.prototype = {
       })
       .on('set', function(newValue, callback) {
         debug("setActiveIdentifier => setNewValue: ", that.zone, newValue);
-        yamaha.setInputTo(yamahaInputs.find(function(input) {
+        yamaha.setInputTo(util.Inputs.find(function(input) {
           // debug("find %s === %s", input.Identifier, newValue);
           return (input.Identifier === newValue ? input : false);
         }).ConfiguredName, that.zone).then(function(a, b) {
@@ -678,6 +679,28 @@ YamahaZone.prototype = {
       .getCharacteristic(Characteristic.RemoteKey)
       .on('set', function(newValue, callback) {
         debug("setRemoteKey => setNewValue: " + newValue);
+        callback(null);
+      });
+
+    zoneService
+      .getCharacteristic(Characteristic.CurrentMediaState)
+      .on('get', function(callback) {
+        debug("getCurrentMediaState");
+        callback(null);
+      })
+      .on('set', function(newValue, callback) {
+        debug("setCurrentMediaState => setNewValue: " + newValue);
+        callback(null);
+      });
+
+    zoneService
+      .getCharacteristic(Characteristic.TargetMediaState)
+      .on('get', function(callback) {
+        debug("getTargetMediaState");
+        callback(null);
+      })
+      .on('set', function(newValue, callback) {
+        debug("setTargetMediaState => setNewValue: " + newValue);
         callback(null);
       });
 
@@ -696,195 +719,23 @@ YamahaZone.prototype = {
       });
 
     accessories.push(zoneService);
-    /*
-    Characteristic.InputSourceType.OTHER = 0;
-    Characteristic.InputSourceType.HOME_SCREEN = 1;
-    Characteristic.InputSourceType.TUNER = 2;
-    Characteristic.InputSourceType.HDMI = 3;
-    Characteristic.InputSourceType.COMPOSITE_VIDEO = 4;
-    Characteristic.InputSourceType.S_VIDEO = 5;
-    Characteristic.InputSourceType.COMPONENT_VIDEO = 6;
-    Characteristic.InputSourceType.DVI = 7;
-    Characteristic.InputSourceType.AIRPLAY = 8;
-    Characteristic.InputSourceType.USB = 9;
-    Characteristic.InputSourceType.APPLICATION = 10;
-    */
-    // I copied this out of the WebUI for my Receiver
-    var yamahaInputs = [{
-        ConfiguredName: "TUNER",
-        Identifier: 0,
-        InputSourceType: 2
-      },
-      {
-        ConfiguredName: "MULTI CH",
-        Identifier: 1,
-        InputSourceType: 0
-      },
-      {
-        ConfiguredName: "PHONO",
-        Identifier: 2,
-        InputSourceType: 2
-      },
-      {
-        ConfiguredName: "HDMI1",
-        Identifier: 3,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "HDMI2",
-        Identifier: 4,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "HDMI3",
-        Identifier: 5,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "HDMI4",
-        Identifier: 6,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "HDMI5",
-        Identifier: 7,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "HDMI6",
-        Identifier: 8,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "HDMI7",
-        Identifier: 9,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "AV1",
-        Identifier: 10,
-        InputSourceType: 7
-      },
-      {
-        ConfiguredName: "AV2",
-        Identifier: 11,
-        InputSourceType: 7
-      },
-      {
-        ConfiguredName: "AV3",
-        Identifier: 12,
-        InputSourceType: 7
-      },
-      {
-        ConfiguredName: "AV4",
-        Identifier: 13,
-        InputSourceType: 7
-      },
-      {
-        ConfiguredName: "AV5",
-        Identifier: 14,
-        InputSourceType: 7
-      },
-      {
-        ConfiguredName: "AV6",
-        Identifier: 15,
-        InputSourceType: 7
-      },
-      {
-        ConfiguredName: "AV7",
-        Identifier: 16,
-        InputSourceType: 7
-      },
-      {
-        ConfiguredName: "V-AUX",
-        Identifier: 17,
-        InputSourceType: 4
-      },
-      {
-        ConfiguredName: "AUDIO1",
-        Identifier: 18,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "AUDIO2",
-        Identifier: 19,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "AUDIO3",
-        Identifier: 20,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "AUDIO4",
-        Identifier: 21,
-        InputSourceType: 3
-      },
-      {
-        ConfiguredName: "USB/NET",
-        Identifier: 22,
-        InputSourceType: 9
-      },
-      {
-        ConfiguredName: "Rhapsody",
-        Identifier: 23,
-        InputSourceType: 10
-      },
-      {
-        ConfiguredName: "Napster",
-        Identifier: 24,
-        InputSourceType: 10
-      },
-      {
-        ConfiguredName: "SiriusXM",
-        Identifier: 25,
-        InputSourceType: 10
-      },
-      {
-        ConfiguredName: "Pandora",
-        Identifier: 26,
-        InputSourceType: 10
-      },
-      {
-        ConfiguredName: "Spotify",
-        Identifier: 27,
-        InputSourceType: 10
-      },
-      {
-        ConfiguredName: "AirPlay",
-        Identifier: 28,
-        InputSourceType: 8
-      },
-      {
-        ConfiguredName: "SERVER",
-        Identifier: 29,
-        InputSourceType: 10
-      },
-      {
-        ConfiguredName: "NET RADIO",
-        Identifier: 30,
-        InputSourceType: 10
-      },
-      {
-        ConfiguredName: "USB",
-        Identifier: 31,
-        InputSourceType: 9
-      },
-      {
-        ConfiguredName: "iPod (USB)",
-        Identifier: 32,
-        InputSourceType: 0
-      }
-    ];
 
-    yamahaInputs.forEach(function(input) {
-      debug("Adding input", this.name, input.ConfiguredName);
+    util.Inputs.forEach(function(input) {
+      // debug("Adding input", this.name, input.ConfiguredName);
       var inputService = new Service.InputSource(this.name + input.ConfiguredName, UUIDGen.generate(this.name + input.ConfiguredName), input.ConfiguredName);
+
+      //         .setCharacteristic(Characteristic.Identifier, input.Identifier)
+
       inputService
         .setCharacteristic(Characteristic.Identifier, input.Identifier)
         .setCharacteristic(Characteristic.ConfiguredName, input.ConfiguredName)
         .setCharacteristic(Characteristic.IsConfigured, Characteristic.IsConfigured.CONFIGURED)
-        .setCharacteristic(Characteristic.InputSourceType, input.InputSourceType);
+        .setCharacteristic(Characteristic.InputSourceType, input.InputSourceType)
+        .getCharacteristic(Characteristic.TargetVisibilityState)
+        .on('set', function(newValue, callback) {
+          debug("setTargetVisibilityState => setNewValue: " + newValue);
+          callback(null);
+        });
 
       zoneService.addLinkedService(inputService);
       accessories.push(inputService);
@@ -896,6 +747,7 @@ YamahaZone.prototype = {
     speakerService
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
       .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
+      // .setCharacteristic(Characteristic.Volume, 50);
 
     speakerService.getCharacteristic(Characteristic.VolumeSelector)
       .on('set', function(newValue, callback) {
