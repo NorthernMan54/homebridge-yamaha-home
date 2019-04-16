@@ -53,8 +53,8 @@ function YamahaAVRPlatform(log, config) {
   this.config = config;
   this.zone = config["zone"] || "Main";
   this.playVolume = config["play_volume"];
-  this.minVolume = config["min_volume"] || -65.0;
-  this.maxVolume = config["max_volume"] || -10.0;
+  this.minVolume = config["min_volume"] || -80.0;
+  this.maxVolume = config["max_volume"] || 20.0;
   this.gapVolume = this.maxVolume - this.minVolume;
   this.showInputName = config["show_input_name"] || "no";
   this.setMainInputTo = config["setMainInputTo"];
@@ -63,7 +63,7 @@ function YamahaAVRPlatform(log, config) {
   this.radioPresets = config["radio_presets"] || false;
   this.presetNum = config["preset_num"] || false;
   this.manualAddresses = config["manual_addresses"] || {};
-  this.spotifyControls = config["spotify"] || false;
+  // this.spotifyControls = config["spotify"] || false;
   this.nozones = config["nozones"] || false;
   // this.partySwitch is nessesary for optional Party Mode Switch
   this.partySwitch = config["party_switch"];
@@ -178,13 +178,15 @@ function setupFromService(service) {
         sysIds[sysId] = true;
         this.log("Found Yamaha " + sysModel + " - " + sysId + ", \"" + name + "\"");
 
+/*
         if (this.nozones) {
           var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
           accessories.push(accessory);
         }
-
+*/
         // Conditional statement. If we have any inputs in config.json property "inputs_as_accessories" this will create those switches.
         // Functionality added via YamahaInputService contructor function
+        /*
         if (this.inputAccessories.hasOwnProperty("YamahaReceiver")) {
           for (var key in this.inputAccessories) {
             var inputs = this.inputAccessories[key];
@@ -201,6 +203,7 @@ function setupFromService(service) {
             }
           }
         }
+        */
 
         // Adding accessory with YamahaParty Switch.
         // Depends on "party_switch" property in config.json. if "yes" => Party Mode Switch exists.
@@ -213,12 +216,6 @@ function setupFromService(service) {
         // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Skip Rev</Playback></Play_Control></Spotify></YAMAHA_AV>
         // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Pause</Playback></Play_Control></Spotify></YAMAHA_AV>
         // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play</Playback></Play_Control></Spotify></YAMAHA_AV>
-
-        if (this.spotifyControls) {
-          // Creates an accesory with a button for each control
-          var accessory = new YamahaSpotify(this.log, this.config, name, yamaha, sysConfig);
-          accessories.push(accessory);
-        }
 
         yamaha.getAvailableZones().then(
           function(zones) {
@@ -341,6 +338,7 @@ YamahaParty.prototype = {
 
 // Spotify controls
 
+/*
 function YamahaSpotify(log, config, name, yamaha, sysConfig) {
   // debug("config %s\nyamaha %s\nsysConfig %s", JSON.stringify(config), JSON.stringify(yamaha), JSON.stringify(sysConfig));
   // var buttons = ["Play", "Pause", "Skip Fwd", "Skip Rev"];
@@ -401,8 +399,11 @@ YamahaSpotify.prototype = {
   }
 };
 
+*/
+
 // Inputs or Scenes as additional Switches.
 
+/*
 function YamahaInputService(log, config, name, yamaha, sysConfig) {
   this.log = log;
   this.config = config;
@@ -488,6 +489,8 @@ YamahaInputService.prototype = {
   }
 };
 
+*/
+
 function YamahaSwitch(log, config, name, yamaha, sysConfig, preset) {
   this.log = log;
   this.config = config;
@@ -569,8 +572,9 @@ function YamahaZone(log, config, name, yamaha, sysConfig, zone) {
   this.config = config;
   this.yamaha = yamaha;
   this.sysConfig = sysConfig;
+  this.pausePlay = false;
 
-  this.minVolume = config["min_volume"] || -65.0;
+  this.minVolume = config["min_volume"] || -80.0;
   this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
 
@@ -675,10 +679,36 @@ YamahaZone.prototype = {
         // callback(null);
       });
 
+    // Spotify / Airplay controls
     zoneService
       .getCharacteristic(Characteristic.RemoteKey)
       .on('set', function(newValue, callback) {
         debug("setRemoteKey => setNewValue: " + newValue);
+        // ["Play", "Pause", "Skip Fwd", "Skip Rev"]
+        var option;
+        switch (newValue) {
+          case Characteristic.RemoteKey.ARROW_RIGHT:
+            option = "Skip Fwd";
+            break;
+          case Characteristic.RemoteKey.ARROW_LEFT:
+            option = "Skip Rev";
+            break;
+          case Characteristic.RemoteKey.PLAY_PAUSE:
+            option = "Pause";
+            break;
+          case Characteristic.RemoteKey.SELECT:
+            option = "Play";
+            break;
+          case Characteristic.RemoteKey.BACK:
+            option = "Stop";
+            break;
+        }
+        if (option) {
+          debug("command", newValue, option, this.pausePlay);
+          yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>' + option + '</Playback></Play_Control></Spotify></YAMAHA_AV>').then(function(status) {
+            debug("Status", status);
+          });
+        }
         callback(null);
       });
 
@@ -724,8 +754,6 @@ YamahaZone.prototype = {
       // debug("Adding input", this.name, input.ConfiguredName);
       var inputService = new Service.InputSource(this.name + input.ConfiguredName, UUIDGen.generate(this.name + input.ConfiguredName), input.ConfiguredName);
 
-      //         .setCharacteristic(Characteristic.Identifier, input.Identifier)
-
       inputService
         .setCharacteristic(Characteristic.Identifier, input.Identifier)
         .setCharacteristic(Characteristic.ConfiguredName, input.ConfiguredName)
@@ -747,11 +775,39 @@ YamahaZone.prototype = {
     speakerService
       .setCharacteristic(Characteristic.Active, Characteristic.Active.ACTIVE)
       .setCharacteristic(Characteristic.VolumeControlType, Characteristic.VolumeControlType.ABSOLUTE);
-      // .setCharacteristic(Characteristic.Volume, 50);
+    // .setCharacteristic(Characteristic.Volume, 50);
+
+    speakerService.getCharacteristic(Characteristic.Volume)
+      .on('get', function(callback) {
+        debug("get Volume => setNewValue: ");
+        callback(null);
+      })
+      .on('set', function(newValue, callback) {
+        debug("set Volume => setNewValue: " + newValue);
+        callback(null);
+      });
+
+    yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+      var v = basicInfo.getVolume() / 10.0;
+      var p = 100 * ((v - that.minVolume) / that.gapVolume);
+      p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
+      debug("Got volume percent of " + p + "%");
+      speakerService.getCharacteristic(Characteristic.Volume).updateValue(p);
+    });
 
     speakerService.getCharacteristic(Characteristic.VolumeSelector)
       .on('set', function(newValue, callback) {
-        debug("set VolumeSelector => setNewValue: " + newValue);
+        var volume = speakerService.getCharacteristic(Characteristic.Volume).value;
+        // debug(volume, speakerService.getCharacteristic(Characteristic.Volume));
+        volume = volume + (newValue ? -1 : +1);
+        speakerService.getCharacteristic(Characteristic.Volume).updateValue(volume);
+        var v = ((volume / 100) * that.gapVolume) + that.minVolume;
+        v = Math.round(v) * 10.0;
+        debug("Setting volume to " + v/10);
+        yamaha.setVolumeTo(v, that.zone).then(function(status) {
+          debug("Status", status);
+        });
+        debug("set VolumeSelector => setNewValue: " + newValue, volume);
         callback(null);
       });
 
@@ -761,6 +817,7 @@ YamahaZone.prototype = {
   }
 };
 
+/*
 function YamahaAVRAccessory(log, config, name, yamaha, sysConfig) {
   this.log = log;
   this.config = config;
@@ -878,7 +935,6 @@ YamahaAVRAccessory.prototype = {
         });
       });
 
-
     var audioDeviceService = new Service.Speaker("Speaker");
     audioDeviceService.addCharacteristic(Characteristic.Volume);
     var volCx = audioDeviceService.getCharacteristic(Characteristic.Volume);
@@ -967,3 +1023,4 @@ YamahaAVRAccessory.prototype = {
     return [informationService, switchService, audioDeviceService, inputService, mainService];
   }
 };
+*/
