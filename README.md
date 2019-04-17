@@ -1,9 +1,9 @@
-# Homebridge-Yamaha-Home
+# Homebridge-Yamaha-TV
 
-[![NPM Downloads](https://img.shields.io/npm/dm/homebridge-yamaha-home.svg?style=flat)](https://npmjs.org/package/homebridge-yamaha-home)
+[![NPM Downloads](https://img.shields.io/npm/dm/homebridge-yamaha-tv.svg?style=flat)](https://npmjs.org/package/homebridge-yamaha-tv)
 
 
-homebridge-plugin for Yamaha AVR control with Apple-Homekit.  Optimized for use with the Apple Home App and with homebridge-alexa.  Creates a Fan for each zone with the Fan speed being the volume. ( I was originally using light bulbs, but switched as Siri and Alexa were turning off the stereo when you asked her to turn off all the lights.)
+Homebridge plugin for multi-zone Yamaha Receivers like the RX-V1075 that creates a HomeKit TV Icon to control the receiver. 
 
 # Installation
 

@@ -470,6 +470,7 @@ YamahaZone.prototype = {
         .getCharacteristic(Characteristic.TargetVisibilityState)
         .on('set', function(newValue, callback) {
           debug("setTargetVisibilityState => setNewValue: ", that.zone, newValue);
+          inputService.getCharacteristic(Characteristic.CurrentVisibilityState).updateValue(newValue);
           callback(null);
         });
 
