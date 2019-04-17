@@ -17,8 +17,8 @@
     "Yamaha"
   ],
   "engines": {
-    "node": ">=0.12.0",
-    "homebridge": ">=0.2.5"
+    "node": ">=9.3.0",
+    "homebridge": ">=0.4.48"
   },
   "dependencies": {
     "bonjour": "^=3.5.0",
@@ -31,7 +31,7 @@
     "util": "^0.10.x",
     "yamaha-nodejs": ">=0.9.0"
   },
-  "author": "neonightmare <neonightmare@gmail.com> (https://github.com/neonightmare)",
+  "author": "NorthernMan54",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/NorthernMan54/homebridge-yamaha-home/issues"
