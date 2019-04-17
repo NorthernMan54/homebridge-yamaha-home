@@ -38,23 +38,18 @@ function YamahaAVRPlatform(log, config, api) {
   this.log = log;
   this.config = config;
   this.api = api;
+
   this.zone = config["zone"] || "Main";
   this.playVolume = config["play_volume"];
   this.minVolume = config["min_volume"] || -80.0;
   this.maxVolume = config["max_volume"] || 20.0;
   this.gapVolume = this.maxVolume - this.minVolume;
-  this.showInputName = config["show_input_name"] || "no";
   this.setMainInputTo = config["setMainInputTo"];
   this.discoveryTimeout = config["discovery_timeout"] || 10;
-  this.radioPresets = config["radio_presets"] || false;
-  this.presetNum = config["preset_num"] || false;
   this.manualAddresses = config["manual_addresses"] || {};
   // this.spotifyControls = config["spotify"] || false;
   this.nozones = config["nozones"] || false;
-  // this.partySwitch is nessesary for optional Party Mode Switch
-  // this.partySwitch = config["party_switch"];
-  // this.inputAccessories is nessesary for optional Inputs Switches
-  this.inputAccessories = config["inputs_as_accessories"] || {};
+
   this.zoneControllersOnlyFor = config["zone_controllers_only_for"] || null;
 
   this.api.on('didFinishLaunching', this.didFinishLaunching.bind(this));
@@ -108,54 +103,6 @@ YamahaAVRPlatform.prototype.didFinishLaunching = function() {
   timer = setTimeout(timeoutFunction, checkCyclePeriod);
 };
 
-/*
-YamahaAVRPlatform.prototype = {
-  accessories: function(callback) {
-    this.log("Getting Yamaha AVR devices.");
-    var that = this;
-
-    var browser = bonjour.find({
-      type: 'http'
-    }, setupFromService.bind(this));
-
-    var timer = 0;
-    var timeElapsed = 0;
-    var checkCyclePeriod = 5000;
-
-    // process manually specified devices...
-    for (var key in this.manualAddresses) {
-      if (!this.manualAddresses.hasOwnProperty(key)) continue;
-      debug("THIS-0", this);
-      setupFromService.call(this, {
-        name: key,
-        host: this.manualAddresses[key],
-        port: 80
-      });
-    }
-
-    // The callback can only be called once...so we'll have to find as many as we can
-    // in a fixed time and then call them in.
-    var timeoutFunction = function() {
-      if (accessories.length >= that.expectedDevices) {
-        clearTimeout(timer);
-      } else {
-        timeElapsed += checkCyclePeriod;
-        if (timeElapsed > that.discoveryTimeout * 1000) {
-          that.log("Waited " + that.discoveryTimeout + " seconds, stopping discovery.");
-        } else {
-          timer = setTimeout(timeoutFunction, checkCyclePeriod);
-          return;
-        }
-      }
-      browser.stop();
-      that.log("Discovery finished, found " + accessories.length + " Yamaha AVR devices.");
-      callback(accessories);
-    };
-    timer = setTimeout(timeoutFunction, checkCyclePeriod);
-  }
-};
-*/
-
 function setupFromService(service) {
   // Looking for name, host and port
   this.log("Possible Yamaha device discovered", service.name, service.addresses);
@@ -186,45 +133,6 @@ function setupFromService(service) {
         sysIds[sysId] = true;
         this.log("Found Yamaha " + sysModel + " - " + sysId + ", \"" + name + "\"");
 
-        /*
-                if (this.nozones) {
-                  var accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
-                  accessories.push(accessory);
-                }
-        */
-        // Conditional statement. If we have any inputs in config.json property "inputs_as_accessories" this will create those switches.
-        // Functionality added via YamahaInputService contructor function
-        /*
-        if (this.inputAccessories.hasOwnProperty("YamahaReceiver")) {
-          for (var key in this.inputAccessories) {
-            var inputs = this.inputAccessories[key];
-            for (var key in inputs) {
-              var inputConfig = inputs[key];
-              var input = parseInt(key);
-              var accname = inputConfig["name"];
-              this.log.info("Making accessory \"" + accname + "\" for input " + input);
-              var accessory = new YamahaInputService(this.log, inputConfig, accname, yamaha, sysConfig, input);
-              accessories.push(accessory);
-              if (accessories.length >= this.expectedDevices) {
-                timeoutFunction(); // We're done, call the timeout function now.
-              }
-            }
-          }
-        }
-        */
-
-        // Adding accessory with YamahaParty Switch.
-        // Depends on "party_switch" property in config.json. if "yes" => Party Mode Switch exists.
-        if (this.partySwitch === 'yes') {
-          var accessory = new YamahaParty(this.log, this.config, name, yamaha, sysConfig);
-          accessories.push(accessory);
-        }
-
-        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Skip Fwd</Playback></Play_Control></Spotify></YAMAHA_AV>
-        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Skip Rev</Playback></Play_Control></Spotify></YAMAHA_AV>
-        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Pause</Playback></Play_Control></Spotify></YAMAHA_AV>
-        // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play</Playback></Play_Control></Spotify></YAMAHA_AV>
-
         yamaha.getAvailableZones().then(
           function(zones) {
             // Only add zones control if more than 1 zone
@@ -243,9 +151,9 @@ function setupFromService(service) {
                           var zoneName = "Main_Zone";
                         }
                         if (this.zoneControllersOnlyFor == null || this.zoneControllersOnlyFor.includes(zoneName)) {
-                          this.log("Adding zone controller for", zoneName);
-                          var uuid = UUIDGen.generate(zoneName);
-                          var zoneAccessory = new Accessory(zoneName, uuid, hap.Accessory.Categories.TELEVISION);
+                          this.log("Adding TV Control for", zoneName);
+                          var uuid = UUIDGen.generate(zoneName + "Y");
+                          var zoneAccessory = new Accessory(zoneName + "Y", uuid, hap.Accessory.Categories.TELEVISION);
                           var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z, zoneAccessory);
                           accessory.getServices();
                           accessories.push(zoneAccessory);
@@ -258,24 +166,6 @@ function setupFromService(service) {
             }
           }.bind(this)
         );
-
-        // Add buttons for each preset
-
-        if (this.radioPresets) {
-          yamaha.getTunerPresetList().then(function(presets) {
-            for (var preset in presets) {
-              this.log("Adding preset %s - %s", preset, presets[preset].value, this.presetNum);
-              if (!this.presetNum) {
-                // preset by frequency
-                var accessory = new YamahaSwitch(this.log, this.config, presets[preset].value, yamaha, sysConfig, preset);
-              } else {
-                // Preset by number
-                var accessory = new YamahaSwitch(this.log, this.config, preset, yamaha, sysConfig, preset);
-              }
-              accessories.push(accessory);
-            }
-          }.bind(this));
-        }
       }
     }.bind(this),
     function(error) {
@@ -283,83 +173,6 @@ function setupFromService(service) {
     }.bind(this)
   );
 }
-
-function YamahaSwitch(log, config, name, yamaha, sysConfig, preset) {
-  this.log = log;
-  this.config = config;
-  this.yamaha = yamaha;
-  this.sysConfig = sysConfig;
-
-  this.nameSuffix = config["name_suffix"] || " Speakers";
-  this.zone = config["zone"] || 1;
-  this.name = 'Preset ' + parseInt(name).toString();
-  this.serviceName = name + this.nameSuffix;
-  this.setMainInputTo = config["setMainInputTo"];
-  this.playVolume = this.config["play_volume"];
-  this.minVolume = config["min_volume"] || -65.0;
-  this.maxVolume = config["max_volume"] || -10.0;
-  this.gapVolume = this.maxVolume - this.minVolume;
-  this.showInputName = config["show_input_name"] || "no";
-  this.preset = preset;
-}
-
-YamahaSwitch.prototype = {
-
-  getServices: function() {
-    // var that = this;
-    var informationService = this.accessory.getServiceByUUIDAndSubType('0000003E-0000-1000-8000-0026BB765291');
-    debug("informationService", informationService);
-    debug("accessory", JSON.stringify(this.accessory, null, 4));
-    var yamaha = this.yamaha;
-
-    informationService
-      .setCharacteristic(Characteristic.Name, this.name)
-      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
-      .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
-      .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
-
-    var switchService = new Service.Switch(this.name);
-    switchService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback, context) {
-        yamaha.getBasicInfo().then(function(basicInfo) {
-          debug('YamahaSwitch Is On', basicInfo.isOn()); // True
-          debug('YamahaSwitch Input', basicInfo.getCurrentInput()); // Tuner
-
-          if (basicInfo.isOn() && basicInfo.getCurrentInput() === 'TUNER') {
-            yamaha.getTunerInfo().then(function(result) {
-              // console.log( 'TunerInfo', JSON.stringify(result,null, 0));
-              debug(result.Play_Info[0].Feature_Availability[0]); // Ready
-              debug(result.Play_Info[0].Search_Mode[0]); // Preset
-              debug(result.Play_Info[0].Preset[0].Preset_Sel[0]); // #
-              if (result.Play_Info[0].Feature_Availability[0] === 'Ready' &&
-                result.Play_Info[0].Search_Mode[0] === 'Preset' &&
-                result.Play_Info[0].Preset[0].Preset_Sel[0] === this.preset) {
-                callback(null, true);
-              } else {
-                callback(null, false);
-              }
-            }.bind(this));
-          } else {
-            // Off
-            callback(null, false);
-          }
-        }.bind(this), function(error) {
-          callback(error);
-        });
-      }.bind(this))
-      .on('set', function(powerOn, callback) {
-        yamaha.setMainInputTo("TUNER").then(function() {
-          return yamaha.selectTunerPreset(this.preset).then(function() {
-            this.log('Tuning radio to preset %s - %s', this.preset, this.name);
-            callback(null, 1);
-          }.bind(this));
-        }.bind(this));
-      }.bind(this));
-
-    return [informationService, switchService];
-  }
-};
 
 function YamahaZone(log, config, name, yamaha, sysConfig, zone, accessory) {
   this.log = log;
@@ -370,11 +183,11 @@ function YamahaZone(log, config, name, yamaha, sysConfig, zone, accessory) {
   this.zone = zone;
   this.accessory = accessory;
 
+  this.radioPresets = config["radio_presets"] || false;
+  this.presetNum = config["preset_num"] || false;
   this.minVolume = config["min_volume"] || -80.0;
   this.maxVolume = config["max_volume"] || -10.0;
   this.gapVolume = this.maxVolume - this.minVolume;
-
-  debug("Names", name, zone);
 }
 
 YamahaZone.prototype = {
@@ -405,13 +218,11 @@ YamahaZone.prototype = {
   },
 
   getServices: function() {
-    // var accessories = [];
     var that = this;
-    // var informationService = this.accessory.getService('Front');
-    // debug("informationService", informationService);
-    debug("accessory", JSON.stringify(this.accessory, null, 4));
     var yamaha = this.yamaha;
-    /*
+
+    var informationService = this.accessory.services[0];
+
     informationService
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
@@ -419,12 +230,11 @@ YamahaZone.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
-    this.accessory.addService(informationService);
-    */
-
     // for main zone Only
     if (this.zone === "Main_Zone") {
-      var partySwitch = new Service.Switch("Party");
+      // Party Mode switch
+
+      var partySwitch = new Service.Switch("Party", UUIDGen.generate("Party"), "Party");
       partySwitch
         .getCharacteristic(Characteristic.On)
         .on('get', function(callback) {
@@ -449,12 +259,75 @@ YamahaZone.prototype = {
           }
         }.bind(this));
       this.accessory.addService(partySwitch);
+
+      // Radio Preset buttons
+
+      if (this.radioPresets) {
+        yamaha.getTunerPresetList().then(function(presets) {
+          for (var preset in presets) {
+            this.log("Adding preset %s - %s", preset, presets[preset].value, this.presetNum);
+            if (!this.presetNum) {
+              // preset by frequency
+              var presetSwitch = new Service.Switch(presets[preset].value, UUIDGen.generate(presets[preset].value), presets[preset].value);
+            } else {
+              // preset by button
+              var presetSwitch = new Service.Switch(preset, UUIDGen.generate(preset), preset);
+            }
+            presetSwitch.context = {};
+
+            presetSwitch.context.preset = preset;
+            presetSwitch
+              .getCharacteristic(Characteristic.On)
+              .on('get', function(callback, context) {
+                debug("getPreset", this);
+                yamaha.getBasicInfo().then(function(basicInfo) {
+                  // debug('YamahaSwitch Is On', basicInfo.isOn()); // True
+                  // debug('YamahaSwitch Input', basicInfo.getCurrentInput()); // Tuner
+
+                  if (basicInfo.isOn() && basicInfo.getCurrentInput() === 'TUNER') {
+                    yamaha.getTunerInfo().then(function(result) {
+                      // console.log( 'TunerInfo', JSON.stringify(result,null, 0));
+                      debug(result.Play_Info[0].Feature_Availability[0]); // Ready
+                      debug(result.Play_Info[0].Search_Mode[0]); // Preset
+                      debug(result.Play_Info[0].Preset[0].Preset_Sel[0]); // #
+                      if (result.Play_Info[0].Feature_Availability[0] === 'Ready' &&
+                        result.Play_Info[0].Search_Mode[0] === 'Preset' &&
+                        result.Play_Info[0].Preset[0].Preset_Sel[0] === this.context.preset) {
+                        callback(null, true);
+                      } else {
+                        callback(null, false);
+                      }
+                    }.bind(this));
+                  } else {
+                    // Off
+                    callback(null, false);
+                  }
+                }.bind(this), function(error) {
+                  callback(error);
+                });
+              }.bind(presetSwitch))
+              .on('set', function(powerOn, callback) {
+                debug("setPreset", this);
+                yamaha.setMainInputTo("TUNER").then(function() {
+                  return yamaha.selectTunerPreset(this.context.preset).then(function() {
+                    debug('Tuning radio to preset %s - %s', this.preset, this.name);
+                    callback(null, 1);
+                  }.bind(this));
+                }.bind(this));
+              }.bind(presetSwitch));
+
+            // debug("Bind", this, presetSwitch);
+            this.accessory.addService(presetSwitch);
+          }
+        }.bind(this)).bind(this);
+      }
     }
 
     var zoneService = new Service.Television(this.name);
     zoneService.setCharacteristic(Characteristic.ConfiguredName, this.name);
     zoneService.getCharacteristic(Characteristic.Active)
       .on('get', function(callback, context) {
+        debug("getActive", that.zone);
         yamaha.isOn(that.zone).then(
           function(result) {
             callback(null, result);
@@ -465,6 +338,7 @@ YamahaZone.prototype = {
         );
       })
       .on('set', function(powerOn, callback) {
+        debug("setActive", that.zone, powerOn);
         this.setPlaying(powerOn).then(function() {
           callback(null, powerOn);
         }, function(error) {
@@ -472,7 +346,7 @@ YamahaZone.prototype = {
         });
       }.bind(this));
 
-    zoneService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
+    // zoneService.setCharacteristic(Characteristic.ActiveIdentifier, 1);
 
     yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
       debug('YamahaSwitch Is On', basicInfo.isOn()); // True
@@ -510,26 +384,8 @@ YamahaZone.prototype = {
     zoneService
       .getCharacteristic(Characteristic.RemoteKey)
       .on('set', function(newValue, callback) {
-        debug("setRemoteKey => setNewValue: ", that.zone, newValue);
-        // ["Play", "Pause", "Skip Fwd", "Skip Rev"]
-        var option;
-        switch (newValue) {
-          case Characteristic.RemoteKey.ARROW_RIGHT:
-            option = "Skip Fwd";
-            break;
-          case Characteristic.RemoteKey.ARROW_LEFT:
-            option = "Skip Rev";
-            break;
-          case Characteristic.RemoteKey.PLAY_PAUSE:
-            option = "Pause";
-            break;
-          case Characteristic.RemoteKey.SELECT:
-            option = "Play";
-            break;
-          case Characteristic.RemoteKey.BACK:
-            option = "Stop";
-            break;
-        }
+        debug("setRemoteKey: ", that.zone, newValue);
+        var option = util.mapKeyToControl(newValue);
         if (option) {
           debug("command", that.zone, newValue, option, this.pausePlay);
           yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>' + option + '</Playback></Play_Control></Spotify></YAMAHA_AV>').then(function(status) {
@@ -579,7 +435,7 @@ YamahaZone.prototype = {
 
     util.Inputs.forEach(function(input) {
       // debug("Adding input", this.name, input.ConfiguredName);
-      var inputService = new Service.InputSource(this.name + input.ConfiguredName, UUIDGen.generate(this.name + input.ConfiguredName), input.ConfiguredName);
+      var inputService = new Service.InputSource(input.ConfiguredName, UUIDGen.generate(this.name + input.ConfiguredName), input.ConfiguredName);
 
       inputService
         .setCharacteristic(Characteristic.Identifier, input.Identifier)
