@@ -154,7 +154,7 @@ function setupFromService(service) {
                           this.log("Adding TV Control for", zoneName);
                           var uuid = UUIDGen.generate(zoneName + "Y");
                           var zoneAccessory = new Accessory(zoneName + "Y", uuid, hap.Accessory.Categories.TELEVISION);
-                          var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z, zoneAccessory);
+                          var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z, zoneAccessory, name);
                           accessory.getServices();
                           accessories.push(zoneAccessory);
                         }
@@ -174,7 +174,7 @@ function setupFromService(service) {
   );
 }
 
-function YamahaZone(log, config, name, yamaha, sysConfig, zone, accessory) {
+function YamahaZone(log, config, name, yamaha, sysConfig, zone, accessory, unitName) {
   this.log = log;
   this.config = config;
   this.name = name;
@@ -182,6 +182,7 @@ function YamahaZone(log, config, name, yamaha, sysConfig, zone, accessory) {
   this.sysConfig = sysConfig;
   this.zone = zone;
   this.accessory = accessory;
+  this.unitName = unitName;
 
   this.radioPresets = config["radio_presets"] || false;
   this.presetNum = config["preset_num"] || false;
@@ -234,6 +235,30 @@ YamahaZone.prototype = {
     if (this.zone === "Main_Zone") {
       // Party Mode switch
 
+      var mainSwitch = new Service.Switch(this.unitName, UUIDGen.generate(this.unitName), this.unitName);
+      mainSwitch
+        .getCharacteristic(Characteristic.On)
+        .on('get', function(callback, context) {
+          yamaha.isOn().then(
+            function(result) {
+              callback(null, result);
+            },
+            function(error) {
+              callback(error, false);
+            }
+          );
+        })
+        .on('set', function(powerOn, callback) {
+          this.setPlaying(powerOn).then(function() {
+            callback(null, powerOn);
+          }, function(error) {
+            callback(error, !powerOn); // TODO: Actually determine and send real new status.
+          });
+        }.bind(this));
+      this.accessory.addService(mainSwitch);
+
+      // Party Mode switch
+
       var partySwitch = new Service.Switch("Party", UUIDGen.generate("Party"), "Party");
       partySwitch
         .getCharacteristic(Characteristic.On)
@@ -271,7 +296,7 @@ YamahaZone.prototype = {
               var presetSwitch = new Service.Switch(presets[preset].value, UUIDGen.generate(presets[preset].value), presets[preset].value);
             } else {
               // preset by button
-              var presetSwitch = new Service.Switch(preset, UUIDGen.generate(preset), preset);
+              var presetSwitch = new Service.Switch("Preset " + preset, UUIDGen.generate(preset), preset);
             }
             presetSwitch.context = {};
 
@@ -279,7 +304,7 @@ YamahaZone.prototype = {
             presetSwitch
               .getCharacteristic(Characteristic.On)
               .on('get', function(callback, context) {
-                debug("getPreset", this);
+                // debug("getPreset", this);
                 yamaha.getBasicInfo().then(function(basicInfo) {
                   // debug('YamahaSwitch Is On', basicInfo.isOn()); // True
                   // debug('YamahaSwitch Input', basicInfo.getCurrentInput()); // Tuner
@@ -307,11 +332,11 @@ YamahaZone.prototype = {
                 });
               }.bind(presetSwitch))
               .on('set', function(powerOn, callback) {
-                debug("setPreset", this);
+                // debug("setPreset", this);
                 yamaha.setMainInputTo("TUNER").then(function() {
                   return yamaha.selectTunerPreset(this.context.preset).then(function() {
-                    debug('Tuning radio to preset %s - %s', this.preset, this.name);
-                    callback(null, 1);
+                    debug('Tuning radio to preset %s - %s', this.context.preset, this.displayName);
+                    callback(null);
                   }.bind(this));
                 }.bind(this));
               }.bind(presetSwitch));
