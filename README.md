@@ -96,6 +96,12 @@ Example config.json:
 }
 ```
 
+# Other Yamaha Receiver Plugins
+
+## [homebridge-yamaha-zone-tv](https://github.com/NorthernMan54/homebridge-yamaha-zone-tv) For multi-zone Yamaha Receivers, and uses the Television control for each zone of the receiver.
+
+## [homebridge-yamaha-avr](https://github.com/ACDR/homebridge-yamaha-avr) For single zone Yamaha receivers, and uses the Television control for the receiver.
+
 # Credits
 
 * neonightmare - Creating the original plugin
