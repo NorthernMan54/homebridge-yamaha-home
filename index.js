@@ -590,10 +590,11 @@ YamahaZone.prototype = {
         if (that.setMainInputTo) return yamaha.setMainInputTo(that.setMainInputTo);
         else return Q();
       }).then(function() {
-        if (that.setMainInputTo === "AirPlay") return yamaha.SendXMLToReceiver(
-          '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
-        );
-        else return Q();
+        if (that.setMainInputTo === "AirPlay") {
+          return yamaha.SendXMLToReceiver(
+            '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
+          );
+        } else return Q();
       });
     } else {
       return yamaha.powerOff(that.zone);
@@ -612,21 +613,43 @@ YamahaZone.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
+    if (this.zone === "Main_Zone") {
+      var mainPower = new Service.Switch("Yamaha Power");
+      mainPower.getCharacteristic(Characteristic.On)
+        .on('get', function(callback, context) {
+          yamaha.isOn().then(
+            function(result) {
+              callback(null, result);
+            },
+            function(error) {
+              callback(error, false);
+            }
+          );
+        })
+        .on('set', function(powerOn, callback) {
+          this.setPlaying(powerOn).then(function() {
+            callback(null, powerOn);
+          }, function(error) {
+            callback(error, !powerOn); // TODO: Actually determine and send real new status.
+          });
+        }.bind(this));
+    }
+
     var zoneService = new Service.Fan(this.name);
     zoneService.getCharacteristic(Characteristic.On)
       .on('get', function(callback, context) {
         yamaha.isOn(that.zone).then(
           function(result) {
-            callback(false, result);
-          }.bind(this),
+            callback(null, result);
+          },
           function(error) {
             callback(error, false);
-          }.bind(this)
+          }
         );
-      }.bind(this))
+      })
       .on('set', function(powerOn, callback) {
         this.setPlaying(powerOn).then(function() {
-          callback(false, powerOn);
+          callback(null, powerOn);
         }, function(error) {
           callback(error, !powerOn); // TODO: Actually determine and send real new status.
         });
@@ -639,7 +662,7 @@ YamahaZone.prototype = {
           var p = 100 * ((v - that.minVolume) / that.gapVolume);
           p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
           debug("Got volume percent of " + v + "%, " + p + "% ", that.zone);
-          callback(false, p);
+          callback(null, p);
         }, function(error) {
           callback(error, 0);
         });
@@ -650,13 +673,16 @@ YamahaZone.prototype = {
         debug("Setting volume to " + v + "%, " + p + "% ", that.zone);
         yamaha.setVolumeTo(v, that.zone).then(function(response) {
           debug("Success", response);
-          callback(false, p);
+          callback(null, p);
         }, function(error) {
-          callback(error, volCx.value);
+          callback(error);
         });
       });
-
-    return [informationService, zoneService];
+    if (mainPower) {
+      return [informationService, zoneService, mainPower];
+    } else {
+      return [informationService, zoneService];
+    }
   }
 };
 
