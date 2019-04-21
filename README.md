@@ -96,6 +96,32 @@ Example config.json:
 }
 ```
 
+## My personal configuration
+
+```
+{
+  "platform": "yamaha-home",
+  "discovery_timeout": 5,
+  "radio_presets": true,
+  "preset_num": true,
+  "max_volume": 20,
+  "party_switch": "yes",
+  "spotify": true,
+  "inputs_as_accessories": {
+    "YamahaReceiver": {
+      "1": {
+        "name": "Input Radio",
+        "setInputTo": "TUNER"
+      },
+      "2": {
+        "name": "Input Spotify",
+        "setInputTo": "Spotify"
+      }
+    }
+  }
+}
+```
+
 # Other Yamaha Receiver Plugins
 
 ## [homebridge-yamaha-zone-tv](https://github.com/NorthernMan54/homebridge-yamaha-zone-tv) For multi-zone Yamaha Receivers, and uses the Television control for each zone of the receiver.
