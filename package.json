@@ -1,6 +1,6 @@
 {
   "name": "homebridge-yamaha-home",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "description": "homebridge-plugin for Yamaha AVR https://github.com/nfarina/homebridge",
   "main": "index.js",
   "scripts": {
