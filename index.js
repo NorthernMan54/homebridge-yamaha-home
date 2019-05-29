@@ -163,10 +163,11 @@ function setupFromService(service) {
   // console.log('Found HTTP service "' + name + '"');
   // We can't tell just from mdns if this is an AVR...
   if (service.port !== 80) return; // yamaha-nodejs assumes this, so finding one on another port wouldn't do any good anyway.
+  debug("Is this a Yamaha ?", service.name, service.host);
   var yamaha = new Yamaha(service.host);
   yamaha.getSystemConfig().then(
     function(sysConfig) {
-      debug( JSON.stringify(sysConfig, null, 2));
+      debug(JSON.stringify(sysConfig, null, 2));
       if (sysConfig && sysConfig.YAMAHA_AV) {
         var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
         var sysId = sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0];
