@@ -167,7 +167,7 @@ function setupFromService(service) {
   var yamaha = new Yamaha(service.host);
   yamaha.getSystemConfig().then(
     function(sysConfig) {
-      debug(JSON.stringify(sysConfig, null, 2));
+      debug("SysConfig -> %s ->", name, JSON.stringify(sysConfig, null, 2));
       if (sysConfig && sysConfig.YAMAHA_AV) {
         var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
         var sysId = sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0];
