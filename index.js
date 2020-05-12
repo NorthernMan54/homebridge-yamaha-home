@@ -185,10 +185,20 @@ function setupFromService(service) {
 
         // Conditional statement. If we have any inputs in config.json property "inputs_as_accessories" this will create those switches.
         // Functionality added via YamahaInputService contructor function
-        if (this.inputAccessories.hasOwnProperty("YamahaReceiver")) {
+        /*
+        "inputs_as_accessories": {
+                "Family": {
+                    "1": {
+                        "name": "AppleTV-Test",
+                        "setInputTo": "AppleTV"
+                    }
+                }
+            }
+        */
+        if (this.inputAccessories.hasOwnProperty(name)) {
           for (var key in this.inputAccessories) {
-            var inputs = this.inputAccessories[key];
-            for (var key in inputs) {
+            var inputs = this.inputAccessories[key];  // YamahaReceiver
+            for (var key in inputs) {                 // 1
               var inputConfig = inputs[key];
               var input = parseInt(key);
               var accname = inputConfig["name"];
