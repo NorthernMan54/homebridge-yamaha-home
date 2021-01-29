@@ -480,13 +480,13 @@ YamahaInputService.prototype = {
               that.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ' + that.setScene + '</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>').then(function() {
                 // This will set the input
                 that.yamaha.setVolumeTo(that.setDefaultVolume * 10, this.zone).then(function() {
-                  callback(null, true);
+                  callback(null);
                 });
               });
             });
           });
         } else {
-          callback(null, false);
+          callback(null);
         }
         setTimeout(function() {
           this.inputSwitchService.setCharacteristic(Characteristic.On, 0);
@@ -547,14 +547,14 @@ YamahaSwitch.prototype = {
               if (result.Play_Info[0].Feature_Availability[0] === 'Ready' &&
                 result.Play_Info[0].Search_Mode[0] === 'Preset' &&
                 result.Play_Info[0].Preset[0].Preset_Sel[0] === this.preset) {
-                callback(false, true);
+                callback(null, true);
               } else {
-                callback(false, false);
+                callback(null, false);
               }
             }.bind(this));
           } else {
             // Off
-            callback(false, false);
+            callback(null, false);
           }
         }.bind(this), function(error) {
           callback(error);
@@ -564,7 +564,7 @@ YamahaSwitch.prototype = {
         yamaha.setMainInputTo("TUNER").then(function() {
           return yamaha.selectTunerPreset(this.preset).then(function() {
             this.log('Tuning radio to preset %s - %s', this.preset, this.name);
-            callback(null, 1);
+            callback(null);
           }.bind(this));
         }.bind(this));
       }.bind(this));
@@ -639,9 +639,9 @@ YamahaZone.prototype = {
         })
         .on('set', function(powerOn, callback) {
           this.setPlaying(powerOn).then(function() {
-            callback(null, powerOn);
+            callback(null);
           }, function(error) {
-            callback(error, !powerOn); // TODO: Actually determine and send real new status.
+            callback(error); // TODO: Actually determine and send real new status.
           });
         }.bind(this));
     }
@@ -660,9 +660,9 @@ YamahaZone.prototype = {
       })
       .on('set', function(powerOn, callback) {
         this.setPlaying(powerOn).then(function() {
-          callback(null, powerOn);
+          callback(null);
         }, function(error) {
-          callback(error, !powerOn); // TODO: Actually determine and send real new status.
+          callback(error); // TODO: Actually determine and send real new status.
         });
       }.bind(this));
 
@@ -684,7 +684,7 @@ YamahaZone.prototype = {
         debug("Setting volume to " + v + "%, " + p + "% ", that.zone);
         yamaha.setVolumeTo(v, that.zone).then(function(response) {
           debug("Success", response);
-          callback(null, p);
+          callback(null);
         }, function(error) {
           callback(error);
         });
@@ -756,7 +756,7 @@ YamahaAVRAccessory.prototype = {
       .on('get', function(callback, context) {
         yamaha.isOn().then(
           function(result) {
-            callback(false, result);
+            callback(null, result);
           }.bind(this),
           function(error) {
             callback(error, false);
@@ -765,9 +765,9 @@ YamahaAVRAccessory.prototype = {
       }.bind(this))
       .on('set', function(powerOn, callback) {
         this.setPlaying(powerOn).then(function() {
-          callback(false, powerOn);
+          callback(null);
         }, function(error) {
-          callback(error, !powerOn); // TODO: Actually determine and send real new status.
+          callback(error); // TODO: Actually determine and send real new status.
         });
       }.bind(this));
 
@@ -776,7 +776,7 @@ YamahaAVRAccessory.prototype = {
       .on('get', function(callback, context) {
         yamaha.isOn().then(
           function(result) {
-            callback(false, result);
+            callback(null, result);
           }.bind(this),
           function(error) {
             callback(error, false);
@@ -785,9 +785,9 @@ YamahaAVRAccessory.prototype = {
       }.bind(this))
       .on('set', function(powerOn, callback) {
         this.setPlaying(powerOn).then(function() {
-          callback(false, powerOn);
+          callback(null);
         }, function(error) {
-          callback(error, !powerOn); // TODO: Actually determine and send real new status.
+          callback(error); // TODO: Actually determine and send real new status.
         });
       }.bind(this));
 
@@ -798,7 +798,7 @@ YamahaAVRAccessory.prototype = {
           var p = 100 * ((v - that.minVolume) / that.gapVolume);
           p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
           debug("Got volume percent of " + p + "%");
-          callback(false, p);
+          callback(null, p);
         }, function(error) {
           callback(error, 0);
         });
@@ -808,9 +808,9 @@ YamahaAVRAccessory.prototype = {
         v = Math.round(v) * 10.0;
         debug("Setting volume to " + v);
         yamaha.setVolumeTo(v, that.zone).then(function() {
-          callback(false, p);
+          callback(null);
         }, function(error) {
-          callback(error, volCx.value);
+          callback(error);
         });
       });
 
@@ -825,7 +825,7 @@ YamahaAVRAccessory.prototype = {
           var p = 100 * ((v - that.minVolume) / that.gapVolume);
           p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
           debug("Got volume percent of " + p + "%");
-          callback(false, p);
+          callback(null, p);
         }, function(error) {
           callback(error, 0);
         });
@@ -835,9 +835,9 @@ YamahaAVRAccessory.prototype = {
         v = Math.round(v) * 10.0;
         debug("Setting volume to " + v);
         yamaha.setVolumeTo(v, that.zone).then(function() {
-          callback(false, p);
+          callback(null);
         }, function(error) {
-          callback(error, volCx.value);
+          callback(error);
         });
       })
       .getValue(null, null); // force an asynchronous get
@@ -846,7 +846,7 @@ YamahaAVRAccessory.prototype = {
 
     mutingCx.on('get', function(callback, context) {
         yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-          callback(false, basicInfo.isMuted());
+          callback(null, basicInfo.isMuted());
         }, function(error) {
           callback(error, 0);
         });
@@ -866,9 +866,9 @@ YamahaAVRAccessory.prototype = {
         mute_xml += '</Mute></Volume></' + zone_name + '></YAMAHA_AV>';
 
         yamaha.SendXMLToReceiver(mute_xml).then(function() {
-          callback(false, v);
+          callback(null);
         }, function(error) {
-          callback(error, mutingCx.value);
+          callback(error);
         });
       })
       .getValue(null, null); // force an asynchronous get
@@ -878,7 +878,7 @@ YamahaAVRAccessory.prototype = {
     var inputCx = inputService.getCharacteristic(YamahaAVRPlatform.Input);
     inputCx.on('get', function(callback, context) {
         yamaha.getBasicInfo().then(function(basicInfo) {
-          callback(false, basicInfo.getCurrentInput());
+          callback(null, basicInfo.getCurrentInput());
         }, function(error) {
           callback(error, 0);
         });
@@ -892,7 +892,7 @@ YamahaAVRAccessory.prototype = {
           yamaha.getBasicInfo().then(function(basicInfo) {
             var name = basicInfo.YAMAHA_AV.Main_Zone[0].Basic_Status[0].Input[0].Input_Sel_Item_Info[0].Src_Name[0];
             name = name.replace('Osdname:', '');
-            callback(false, name);
+            callback(null, name);
           }, function(error) {
             callback(error, 0);
           });
