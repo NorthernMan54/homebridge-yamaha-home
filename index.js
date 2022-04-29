@@ -400,7 +400,7 @@ YamahaSpotify.prototype = {
             this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>' + this.subtype + '</Playback></Play_Control></Spotify></YAMAHA_AV>');
             setTimeout(function () {
               this.setCharacteristic(Characteristic.On, 0);
-            }.bind(this), 1 * 1000); // After 1 second turn off
+            }.bind(this), 5 * 1000); // After 1 second turn off
           }
           callback(null, on);
         }.bind(spotifyButton));
@@ -474,6 +474,7 @@ YamahaInputService.prototype = {
       }.bind(this))
       .on('set', function (on, callback) {
         if (on) {
+          debug('Setting Input', this.setInputTo);
           var that = this;
           this.yamaha.powerOn().then(function () {
             that.yamaha.setMainInputTo(that.setInputTo).then(function () { // If set_scene exists, this will set the scene
@@ -491,7 +492,7 @@ YamahaInputService.prototype = {
         }
         setTimeout(function () {
           this.inputSwitchService.setCharacteristic(Characteristic.On, 0);
-        }.bind(this), 1 * 1000); // After 1 second turn off
+        }.bind(this), 5 * 1000); // After 1 second turn off
       }.bind(this));
 
     return [informationService, inputSwitchService];
@@ -533,41 +534,20 @@ YamahaSwitch.prototype = {
 
     var switchService = new Service.Switch(this.name);
     switchService.getCharacteristic(Characteristic.On)
-      .on('get', function (callback, context) {
-        yamaha.getBasicInfo().then(function (basicInfo) {
-          debug('Is On', basicInfo.isOn()); // True
-          debug('Input', basicInfo.getCurrentInput()); // Tuner
-
-          if (basicInfo.isOn() && basicInfo.getCurrentInput() === 'TUNER') {
-
-            yamaha.getTunerInfo().then(function (result) {
-              // console.log( 'TunerInfo', JSON.stringify(result,null, 0));
-              debug(result.Play_Info[0].Feature_Availability[0]); // Ready
-              debug(result.Play_Info[0].Search_Mode[0]); // Preset
-              debug(result.Play_Info[0].Preset[0].Preset_Sel[0]); // #
-              if (result.Play_Info[0].Feature_Availability[0] === 'Ready' &&
-                result.Play_Info[0].Search_Mode[0] === 'Preset' &&
-                result.Play_Info[0].Preset[0].Preset_Sel[0] === this.preset) {
-                callback(null, true);
-              } else {
-                callback(null, false);
-              }
-            }.bind(this));
-          } else {
-            // Off
-            callback(null, false);
-          }
-        }.bind(this), function (error) {
-          callback(error);
-        });
-      }.bind(this))
       .on('set', function (powerOn, callback) {
-        yamaha.setMainInputTo("TUNER").then(function () {
-          return yamaha.selectTunerPreset(this.preset).then(function () {
-            this.log('Tuning radio to preset %s - %s', this.preset, this.name);
-            callback(null);
+        if (powerOn) {
+          yamaha.setMainInputTo("TUNER").then(function () {
+            return yamaha.selectTunerPreset(this.preset).then(function () {
+              this.log('Tuning radio to preset %s - %s', this.preset, this.name);
+              setTimeout(function () {
+                this.setCharacteristic(Characteristic.On, 0);
+              }.bind(switchService), 5 * 1000); // After 1 second turn off
+              callback(null);
+            }.bind(this));
           }.bind(this));
-        }.bind(this));
+        } else {
+          callback(null);
+        };
       }.bind(this));
 
     return [informationService, switchService];
