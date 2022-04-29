@@ -39,6 +39,9 @@ Optional Properties:
 - spotify - Enable spotify control buttons
 - nozones - Do not create an accessory per zone
 
+## Use with Siri
+I have been looking for a way to tell Siri (on my HomePod Mini) to turn up or down the volume on the Yamaha Receiver. This plugin works perfectly using the Home app, where adjusting the "fan speed" changes the receiver volume. For anyone curious, this works for me: Hei, Siri, set the living room TV to 40 percent.
+
 ## Basic config.json config
 
 "platforms": [{
