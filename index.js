@@ -25,7 +25,7 @@ var ip = require('ip');
 var sysIds = {};
 var accessories = [];
 
-module.exports = function(homebridge) {
+module.exports = function (homebridge) {
   Service = homebridge.hap.Service;
   Characteristic = homebridge.hap.Characteristic;
   types = homebridge.hapLegacyTypes;
@@ -74,7 +74,7 @@ function YamahaAVRPlatform(log, config) {
 
 // Custom Characteristics and service...
 
-YamahaAVRPlatform.Input = function() {
+YamahaAVRPlatform.Input = function () {
   Characteristic.call(this, 'Input', '00001003-0000-1000-8000-135D67EC4377');
   this.setProps({
     format: Characteristic.Formats.STRING,
@@ -83,7 +83,7 @@ YamahaAVRPlatform.Input = function() {
   this.value = this.getDefaultValue();
 };
 
-YamahaAVRPlatform.InputName = function() {
+YamahaAVRPlatform.InputName = function () {
   Characteristic.call(this, 'Input Name', '00001004-0000-1000-8000-135D67EC4377');
   this.setProps({
     format: Characteristic.Formats.STRING,
@@ -92,7 +92,7 @@ YamahaAVRPlatform.InputName = function() {
   this.value = this.getDefaultValue();
 };
 
-YamahaAVRPlatform.InputService = function(displayName, subtype) {
+YamahaAVRPlatform.InputService = function (displayName, subtype) {
   Service.call(this, displayName, '00000002-0000-1000-8000-135D67EC4377', subtype);
 
   // Required Characteristics
@@ -103,7 +103,7 @@ YamahaAVRPlatform.InputService = function(displayName, subtype) {
 };
 
 YamahaAVRPlatform.prototype = {
-  accessories: function(callback) {
+  accessories: function (callback) {
     this.log("Getting Yamaha AVR devices.");
     var that = this;
 
@@ -127,7 +127,7 @@ YamahaAVRPlatform.prototype = {
 
     // The callback can only be called once...so we'll have to find as many as we can
     // in a fixed time and then call them in.
-    var timeoutFunction = function() {
+    var timeoutFunction = function () {
       if (accessories.length >= that.expectedDevices) {
         clearTimeout(timer);
       } else {
@@ -166,7 +166,7 @@ function setupFromService(service) {
   debug("Is this a Yamaha ?", service.name, service.host);
   var yamaha = new Yamaha(service.host);
   yamaha.getSystemConfig().then(
-    function(sysConfig) {
+    function (sysConfig) {
       debug("SysConfig -> %s ->", name, JSON.stringify(sysConfig, null, 2));
       if (sysConfig && sysConfig.YAMAHA_AV) {
         var sysModel = sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0];
@@ -195,6 +195,7 @@ function setupFromService(service) {
                 }
             }
         */
+        this.log('Checking for \'inputs_as_accessories\' for receiver \'%s\'', name);
         if (this.inputAccessories.hasOwnProperty(name)) {
           for (var key in this.inputAccessories) {
             var inputs = this.inputAccessories[key];  // YamahaReceiver
@@ -230,16 +231,16 @@ function setupFromService(service) {
         }
 
         yamaha.getAvailableZones().then(
-          function(zones) {
+          function (zones) {
             // Only add zones control if more than 1 zone
             // Hack to always create a zone control
             // TODO: Remove if block
             if (zones.length > 0 && !this.nozones) {
               for (var zone in zones) {
-                yamaha.getBasicInfo(zones[zone]).then(function(basicInfo) {
+                yamaha.getBasicInfo(zones[zone]).then(function (basicInfo) {
                   if (basicInfo.getVolume() !== -999) {
                     yamaha.getZoneConfig(basicInfo.getZone()).then(
-                      function(zoneInfo) {
+                      function (zoneInfo) {
                         if (zoneInfo) {
                           var z = Object.keys(zoneInfo.YAMAHA_AV)[1];
                           var zoneName = zoneInfo.YAMAHA_AV[z][0].Config[0].Name[0].Zone[0];
@@ -263,7 +264,7 @@ function setupFromService(service) {
         // Add buttons for each preset
 
         if (this.radioPresets) {
-          yamaha.getTunerPresetList().then(function(presets) {
+          yamaha.getTunerPresetList().then(function (presets) {
             for (var preset in presets) {
               this.log("Adding preset %s - %s", preset, presets[preset].value, this.presetNum);
               if (!this.presetNum) {
@@ -281,7 +282,7 @@ function setupFromService(service) {
       if (accessories.length >= this.expectedDevices)
         timeoutFunction(); // We're done, call the timeout function now.
     }.bind(this),
-    function(error) {
+    function (error) {
       this.log("DEBUG: Failed getSystemConfig from " + name + ", probably just not a Yamaha AVR.");
     }.bind(this)
   );
@@ -310,7 +311,7 @@ function YamahaParty(log, config, name, yamaha, sysConfig) {
 
 YamahaParty.prototype = {
 
-  getServices: function() {
+  getServices: function () {
     var that = this;
     var informationService = new Service.AccessoryInformation();
     // var yamaha = this.yamaha;
@@ -324,22 +325,22 @@ YamahaParty.prototype = {
 
     var partyService = new Service.Switch(this.name);
     partyService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback) {
+      .on('get', function (callback) {
         const that = this;
-        this.yamaha.isPartyModeEnabled().then(function(result) {
+        this.yamaha.isPartyModeEnabled().then(function (result) {
           callback(null, result);
         });
       }.bind(this))
-      .on('set', function(on, callback) {
+      .on('set', function (on, callback) {
         if (on) {
           const that = this;
-          this.yamaha.powerOn().then(function() {
-            that.yamaha.partyModeOn().then(function() {
+          this.yamaha.powerOn().then(function () {
+            that.yamaha.partyModeOn().then(function () {
               callback(null, true);
             });
           });
         } else {
-          this.yamaha.partyModeOff().then(function() {
+          this.yamaha.partyModeOff().then(function () {
             callback(null, false);
           });
         }
@@ -374,7 +375,7 @@ function YamahaSpotify(log, config, name, yamaha, sysConfig) {
 
 YamahaSpotify.prototype = {
 
-  getServices: function() {
+  getServices: function () {
     var services = [];
     var informationService = new Service.AccessoryInformation();
 
@@ -385,19 +386,19 @@ YamahaSpotify.prototype = {
       .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
     services.push(informationService);
-    ["Play", "Pause", "Skip Fwd", "Skip Rev"].forEach(function(button) {
+    ["Play", "Pause", "Skip Fwd", "Skip Rev"].forEach(function (button) {
       // debug("THIS", this);
       var spotifyButton = new Service.Switch(button + " (" + this.serviceName + ")");
       spotifyButton.subtype = button;
       spotifyButton.yamaha = this.yamaha;
       debug("Adding Spotify Button", spotifyButton.displayName);
       spotifyButton.getCharacteristic(Characteristic.On)
-        .on('set', function(on, callback) {
+        .on('set', function (on, callback) {
           // debug("THIS", this);
           debug("Spotify Control", this.displayName);
           if (on) { // <YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>Play                </Playback></Play_Control></Spotify></YAMAHA_AV>
             this.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>' + this.subtype + '</Playback></Play_Control></Spotify></YAMAHA_AV>');
-            setTimeout(function() {
+            setTimeout(function () {
               this.setCharacteristic(Characteristic.On, 0);
             }.bind(this), 1 * 1000); // After 1 second turn off
           }
@@ -440,7 +441,7 @@ function YamahaInputService(log, config, name, yamaha, sysConfig) {
 // Prototype function runs for each switch specified in config json file. Loop syntax is in function setupFromService(service). Currently line 189.
 YamahaInputService.prototype = {
 
-  getServices: function() {
+  getServices: function () {
     var that = this;
     var informationService = new Service.AccessoryInformation();
     var yamaha = this.yamaha;
@@ -455,9 +456,9 @@ YamahaInputService.prototype = {
     var inputSwitchService = new Service.Switch(this.name);
     this.inputSwitchService = inputSwitchService;
     inputSwitchService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback, context) {
+      .on('get', function (callback, context) {
         this.yamaha.getCurrentInput().then(
-          function(result) {
+          function (result) {
             // that.log(result) //This logs the current Input. Needed for testing.
             // Conditional statement below checks the current input. If input 1 is active, all other inputs in Home App become not active.
             // When swithing input from 1 to 3, input 3 becomes active and input 1 becomes not active. (input numbers are for example)
@@ -471,15 +472,15 @@ YamahaInputService.prototype = {
           }
         );
       }.bind(this))
-      .on('set', function(on, callback) {
+      .on('set', function (on, callback) {
         if (on) {
           var that = this;
-          this.yamaha.powerOn().then(function() {
-            that.yamaha.setMainInputTo(that.setInputTo).then(function() { // If set_scene exists, this will set the scene
+          this.yamaha.powerOn().then(function () {
+            that.yamaha.setMainInputTo(that.setInputTo).then(function () { // If set_scene exists, this will set the scene
               // This will set the scene
-              that.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ' + that.setScene + '</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>').then(function() {
+              that.yamaha.SendXMLToReceiver('<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ' + that.setScene + '</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>').then(function () {
                 // This will set the input
-                that.yamaha.setVolumeTo(that.setDefaultVolume * 10, this.zone).then(function() {
+                that.yamaha.setVolumeTo(that.setDefaultVolume * 10, this.zone).then(function () {
                   callback(null);
                 });
               });
@@ -488,7 +489,7 @@ YamahaInputService.prototype = {
         } else {
           callback(null);
         }
-        setTimeout(function() {
+        setTimeout(function () {
           this.inputSwitchService.setCharacteristic(Characteristic.On, 0);
         }.bind(this), 1 * 1000); // After 1 second turn off
       }.bind(this));
@@ -518,7 +519,7 @@ function YamahaSwitch(log, config, name, yamaha, sysConfig, preset) {
 
 YamahaSwitch.prototype = {
 
-  getServices: function() {
+  getServices: function () {
     var that = this;
     var informationService = new Service.AccessoryInformation();
     var yamaha = this.yamaha;
@@ -532,14 +533,14 @@ YamahaSwitch.prototype = {
 
     var switchService = new Service.Switch(this.name);
     switchService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback, context) {
-        yamaha.getBasicInfo().then(function(basicInfo) {
+      .on('get', function (callback, context) {
+        yamaha.getBasicInfo().then(function (basicInfo) {
           debug('Is On', basicInfo.isOn()); // True
           debug('Input', basicInfo.getCurrentInput()); // Tuner
 
           if (basicInfo.isOn() && basicInfo.getCurrentInput() === 'TUNER') {
 
-            yamaha.getTunerInfo().then(function(result) {
+            yamaha.getTunerInfo().then(function (result) {
               // console.log( 'TunerInfo', JSON.stringify(result,null, 0));
               debug(result.Play_Info[0].Feature_Availability[0]); // Ready
               debug(result.Play_Info[0].Search_Mode[0]); // Preset
@@ -556,13 +557,13 @@ YamahaSwitch.prototype = {
             // Off
             callback(null, false);
           }
-        }.bind(this), function(error) {
+        }.bind(this), function (error) {
           callback(error);
         });
       }.bind(this))
-      .on('set', function(powerOn, callback) {
-        yamaha.setMainInputTo("TUNER").then(function() {
-          return yamaha.selectTunerPreset(this.preset).then(function() {
+      .on('set', function (powerOn, callback) {
+        yamaha.setMainInputTo("TUNER").then(function () {
+          return yamaha.selectTunerPreset(this.preset).then(function () {
             this.log('Tuning radio to preset %s - %s', this.preset, this.name);
             callback(null);
           }.bind(this));
@@ -589,18 +590,18 @@ function YamahaZone(log, config, name, yamaha, sysConfig, zone) {
 
 YamahaZone.prototype = {
 
-  setPlaying: function(playing) {
+  setPlaying: function (playing) {
     var that = this;
     var yamaha = this.yamaha;
 
     if (playing) {
-      return yamaha.powerOn(that.zone).then(function() {
+      return yamaha.powerOn(that.zone).then(function () {
         if (that.playVolume) return yamaha.setVolumeTo(that.playVolume * 10, that.zone);
         else return Q();
-      }).then(function() {
+      }).then(function () {
         if (that.setMainInputTo) return yamaha.setMainInputTo(that.setMainInputTo);
         else return Q();
-      }).then(function() {
+      }).then(function () {
         if (that.setMainInputTo === "AirPlay") {
           return yamaha.SendXMLToReceiver(
             '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
@@ -612,7 +613,7 @@ YamahaZone.prototype = {
     }
   },
 
-  getServices: function() {
+  getServices: function () {
     var that = this;
     var informationService = new Service.AccessoryInformation();
     var yamaha = this.yamaha;
@@ -627,20 +628,20 @@ YamahaZone.prototype = {
     if (this.zone === "Main_Zone") {
       var mainPower = new Service.Switch("Yamaha Power");
       mainPower.getCharacteristic(Characteristic.On)
-        .on('get', function(callback, context) {
+        .on('get', function (callback, context) {
           yamaha.isOn().then(
-            function(result) {
+            function (result) {
               callback(null, result);
             },
-            function(error) {
+            function (error) {
               callback(error, false);
             }
           );
         })
-        .on('set', function(powerOn, callback) {
-          this.setPlaying(powerOn).then(function() {
+        .on('set', function (powerOn, callback) {
+          this.setPlaying(powerOn).then(function () {
             callback(null);
-          }, function(error) {
+          }, function (error) {
             callback(error); // TODO: Actually determine and send real new status.
           });
         }.bind(this));
@@ -648,44 +649,44 @@ YamahaZone.prototype = {
 
     var zoneService = new Service.Fan(this.name);
     zoneService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback, context) {
+      .on('get', function (callback, context) {
         yamaha.isOn(that.zone).then(
-          function(result) {
+          function (result) {
             callback(null, result);
           },
-          function(error) {
+          function (error) {
             callback(error, false);
           }
         );
       })
-      .on('set', function(powerOn, callback) {
-        this.setPlaying(powerOn).then(function() {
+      .on('set', function (powerOn, callback) {
+        this.setPlaying(powerOn).then(function () {
           callback(null);
-        }, function(error) {
+        }, function (error) {
           callback(error); // TODO: Actually determine and send real new status.
         });
       }.bind(this));
 
     zoneService.addCharacteristic(new Characteristic.RotationSpeed())
-      .on('get', function(callback, context) {
-        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+      .on('get', function (callback, context) {
+        yamaha.getBasicInfo(that.zone).then(function (basicInfo) {
           var v = basicInfo.getVolume() / 10.0;
           var p = 100 * ((v - that.minVolume) / that.gapVolume);
           p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
           debug("Got volume percent of " + v + "%, " + p + "% ", that.zone);
           callback(null, p);
-        }, function(error) {
+        }, function (error) {
           callback(error, 0);
         });
       })
-      .on('set', function(p, callback) {
+      .on('set', function (p, callback) {
         var v = ((p / 100) * that.gapVolume) + that.minVolume;
         v = Math.round(v) * 10.0;
         debug("Setting volume to " + v + "%, " + p + "% ", that.zone);
-        yamaha.setVolumeTo(v, that.zone).then(function(response) {
+        yamaha.setVolumeTo(v, that.zone).then(function (response) {
           debug("Success", response);
           callback(null);
-        }, function(error) {
+        }, function (error) {
           callback(error);
         });
       });
@@ -717,18 +718,18 @@ function YamahaAVRAccessory(log, config, name, yamaha, sysConfig) {
 
 YamahaAVRAccessory.prototype = {
 
-  setPlaying: function(playing) {
+  setPlaying: function (playing) {
     var that = this;
     var yamaha = this.yamaha;
 
     if (playing) {
-      return yamaha.powerOn("System").then(function() {
+      return yamaha.powerOn("System").then(function () {
         if (that.playVolume) return yamaha.setVolumeTo(that.playVolume * 10, that.zone);
         else return Q();
-      }).then(function() {
+      }).then(function () {
         if (that.setMainInputTo) return yamaha.setMainInputTo(that.setMainInputTo);
         else return Q();
-      }).then(function() {
+      }).then(function () {
         if (that.setMainInputTo === "AirPlay") return yamaha.SendXMLToReceiver(
           '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
         );
@@ -739,7 +740,7 @@ YamahaAVRAccessory.prototype = {
     }
   },
 
-  getServices: function() {
+  getServices: function () {
     var that = this;
     var informationService = new Service.AccessoryInformation();
     var yamaha = this.yamaha;
@@ -753,63 +754,63 @@ YamahaAVRAccessory.prototype = {
 
     var switchService = new Service.Switch("Yamaha Power");
     switchService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback, context) {
+      .on('get', function (callback, context) {
         yamaha.isOn().then(
-          function(result) {
+          function (result) {
             callback(null, result);
           }.bind(this),
-          function(error) {
+          function (error) {
             callback(error, false);
           }.bind(this)
         );
       }.bind(this))
-      .on('set', function(powerOn, callback) {
-        this.setPlaying(powerOn).then(function() {
+      .on('set', function (powerOn, callback) {
+        this.setPlaying(powerOn).then(function () {
           callback(null);
-        }, function(error) {
+        }, function (error) {
           callback(error); // TODO: Actually determine and send real new status.
         });
       }.bind(this));
 
     var mainService = new Service.Fan(this.name);
     mainService.getCharacteristic(Characteristic.On)
-      .on('get', function(callback, context) {
+      .on('get', function (callback, context) {
         yamaha.isOn().then(
-          function(result) {
+          function (result) {
             callback(null, result);
           }.bind(this),
-          function(error) {
+          function (error) {
             callback(error, false);
           }.bind(this)
         );
       }.bind(this))
-      .on('set', function(powerOn, callback) {
-        this.setPlaying(powerOn).then(function() {
+      .on('set', function (powerOn, callback) {
+        this.setPlaying(powerOn).then(function () {
           callback(null);
-        }, function(error) {
+        }, function (error) {
           callback(error); // TODO: Actually determine and send real new status.
         });
       }.bind(this));
 
     mainService.addCharacteristic(new Characteristic.RotationSpeed())
-      .on('get', function(callback, context) {
-        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
+      .on('get', function (callback, context) {
+        yamaha.getBasicInfo(that.zone).then(function (basicInfo) {
           var v = basicInfo.getVolume() / 10.0;
           var p = 100 * ((v - that.minVolume) / that.gapVolume);
           p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
           debug("Got volume percent of " + p + "%");
           callback(null, p);
-        }, function(error) {
+        }, function (error) {
           callback(error, 0);
         });
       })
-      .on('set', function(p, callback) {
+      .on('set', function (p, callback) {
         var v = ((p / 100) * that.gapVolume) + that.minVolume;
         v = Math.round(v) * 10.0;
         debug("Setting volume to " + v);
-        yamaha.setVolumeTo(v, that.zone).then(function() {
+        yamaha.setVolumeTo(v, that.zone).then(function () {
           callback(null);
-        }, function(error) {
+        }, function (error) {
           callback(error);
         });
       });
@@ -819,24 +820,24 @@ YamahaAVRAccessory.prototype = {
     audioDeviceService.addCharacteristic(Characteristic.Volume);
     var volCx = audioDeviceService.getCharacteristic(Characteristic.Volume);
 
-    volCx.on('get', function(callback, context) {
-        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-          var v = basicInfo.getVolume() / 10.0;
-          var p = 100 * ((v - that.minVolume) / that.gapVolume);
-          p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
-          debug("Got volume percent of " + p + "%");
-          callback(null, p);
-        }, function(error) {
-          callback(error, 0);
-        });
-      })
-      .on('set', function(p, callback) {
+    volCx.on('get', function (callback, context) {
+      yamaha.getBasicInfo(that.zone).then(function (basicInfo) {
+        var v = basicInfo.getVolume() / 10.0;
+        var p = 100 * ((v - that.minVolume) / that.gapVolume);
+        p = p < 0 ? 0 : p > 100 ? 100 : Math.round(p);
+        debug("Got volume percent of " + p + "%");
+        callback(null, p);
+      }, function (error) {
+        callback(error, 0);
+      });
+    })
+      .on('set', function (p, callback) {
         var v = ((p / 100) * that.gapVolume) + that.minVolume;
         v = Math.round(v) * 10.0;
         debug("Setting volume to " + v);
-        yamaha.setVolumeTo(v, that.zone).then(function() {
+        yamaha.setVolumeTo(v, that.zone).then(function () {
           callback(null);
-        }, function(error) {
+        }, function (error) {
           callback(error);
         });
       })
@@ -844,14 +845,14 @@ YamahaAVRAccessory.prototype = {
 
     var mutingCx = audioDeviceService.getCharacteristic(Characteristic.Mute);
 
-    mutingCx.on('get', function(callback, context) {
-        yamaha.getBasicInfo(that.zone).then(function(basicInfo) {
-          callback(null, basicInfo.isMuted());
-        }, function(error) {
-          callback(error, 0);
-        });
-      })
-      .on('set', function(v, callback) {
+    mutingCx.on('get', function (callback, context) {
+      yamaha.getBasicInfo(that.zone).then(function (basicInfo) {
+        callback(null, basicInfo.isMuted());
+      }, function (error) {
+        callback(error, 0);
+      });
+    })
+      .on('set', function (v, callback) {
         var zone_name = 'Main_Zone';
         if (that.zone != 1) {
           zone_name = 'Zone_' + that.zone;
@@ -865,9 +866,9 @@ YamahaAVRAccessory.prototype = {
         }
         mute_xml += '</Mute></Volume></' + zone_name + '></YAMAHA_AV>';
 
-        yamaha.SendXMLToReceiver(mute_xml).then(function() {
+        yamaha.SendXMLToReceiver(mute_xml).then(function () {
           callback(null);
-        }, function(error) {
+        }, function (error) {
           callback(error);
         });
       })
@@ -876,27 +877,27 @@ YamahaAVRAccessory.prototype = {
     var inputService = new YamahaAVRPlatform.InputService("Input Functions");
 
     var inputCx = inputService.getCharacteristic(YamahaAVRPlatform.Input);
-    inputCx.on('get', function(callback, context) {
-        yamaha.getBasicInfo().then(function(basicInfo) {
-          callback(null, basicInfo.getCurrentInput());
-        }, function(error) {
-          callback(error, 0);
-        });
-      })
+    inputCx.on('get', function (callback, context) {
+      yamaha.getBasicInfo().then(function (basicInfo) {
+        callback(null, basicInfo.getCurrentInput());
+      }, function (error) {
+        callback(error, 0);
+      });
+    })
       .getValue(null, null); // force an asynchronous get
 
     if (this.showInputName == "yes") {
       inputService.addCharacteristic(YamahaAVRPlatform.InputName);
       var nameCx = inputService.getCharacteristic(YamahaAVRPlatform.InputName);
-      nameCx.on('get', function(callback, context) {
-          yamaha.getBasicInfo().then(function(basicInfo) {
-            var name = basicInfo.YAMAHA_AV.Main_Zone[0].Basic_Status[0].Input[0].Input_Sel_Item_Info[0].Src_Name[0];
-            name = name.replace('Osdname:', '');
-            callback(null, name);
-          }, function(error) {
-            callback(error, 0);
-          });
-        })
+      nameCx.on('get', function (callback, context) {
+        yamaha.getBasicInfo().then(function (basicInfo) {
+          var name = basicInfo.YAMAHA_AV.Main_Zone[0].Basic_Status[0].Input[0].Input_Sel_Item_Info[0].Src_Name[0];
+          name = name.replace('Osdname:', '');
+          callback(null, name);
+        }, function (error) {
+          callback(error, 0);
+        });
+      })
         .getValue(null, null); // force an asynchronous get
     }
 
