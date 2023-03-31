@@ -70,7 +70,6 @@ function YamahaAVRPlatform(log, config) {
   // this.inputAccessories is nessesary for optional Inputs Switches
   this.inputAccessories = config["inputs_as_accessories"] || {};
   this.zoneControllersOnlyFor = config["zone_controllers_only_for"] || null;
-  this.zoneNameMap = config["zone_name_map"] || {};
 }
 
 // Custom Characteristics and service...
@@ -566,6 +565,7 @@ function YamahaZone(log, config, name, yamaha, sysConfig, zone) {
   this.gapVolume = this.maxVolume - this.minVolume;
 
   this.zone = zone;
+  this.zoneNameMap = config["zone_name_map"] || {};
   this.name = this.zoneNameMap[name] || name;
 }
 
