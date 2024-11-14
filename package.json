@@ -47,7 +47,7 @@
     "watch": [
       "src"
     ],
-    "ext": "js",
+    "ext": "js,cjs,mjs,json",
     "ignore": [],
     "exec": "DEBUG=yamaha-home ~/npm/bin/homebridge -U ./test/hbConfig -T -D -P .",
     "signal": "SIGTERM",

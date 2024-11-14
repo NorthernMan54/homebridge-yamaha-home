@@ -101,7 +101,7 @@ class YamahaAVRPlatform {
       browser.stop();
       this.log("Discovery finished, found " + this.receivers.length + " Yamaha AVR devices.");
       console.log(this.receivers)
-      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, [this.receivers]);
+      this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.receivers);
     };
     timer = setTimeout(timeoutFunction, checkCyclePeriod);
   };
@@ -220,8 +220,8 @@ class YamahaAVRPlatform {
           }
           if (this.zoneControllersOnlyFor == null || this.zoneControllersOnlyFor.includes(zoneName)) {
             this.log("Adding zone controller for", zoneName);
-            var accessory = new YamahaZone(this.log, this.config, zoneName, yamaha, sysConfig, z);
-            this.receivers.push(accessory.getServices());
+            var accessory = new YamahaZone(this, zoneName, yamaha, sysConfig, z);
+            this.receivers.push(accessory.getAccessory());
           }
         }
       }
@@ -240,7 +240,7 @@ class YamahaAVRPlatform {
             // Preset by number
             var accessory = new YamahaSwitch(this.log, this.config, preset, yamaha, sysConfig, preset);
           }
-          this.receivers.push(accessory);
+          // this.receivers.push(accessory);
         }
       }.bind(this));
     }

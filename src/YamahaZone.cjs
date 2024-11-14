@@ -3,19 +3,21 @@
 
 
 module.exports = class YamahaZone {
-  
-  constructor(log, config, name, yamaha, sysConfig, zone) {
-    this.log = log;
-    this.config = config;
+
+  constructor(externalContext, name, yamaha, sysConfig, zone) {
+    this.externalContext = externalContext;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.minVolume = config["min_volume"] || -65.0;
-    this.maxVolume = config["max_volume"] || -10.0;
+    this.log = this.externalContext.log;
+    this.api = this.externalContext.api;
+
+    this.minVolume = this.externalContext.config["min_volume"] || -65.0;
+    this.maxVolume = this.externalContext.config["max_volume"] || -10.0;
     this.gapVolume = this.maxVolume - this.minVolume;
 
     this.zone = zone;
-    this.zoneNameMap = config["zone_name_map"] || {};
+    this.zoneNameMap = this.externalContext.config["zone_name_map"] || {};
     this.name = this.zoneNameMap[name] || name;
   }
 
@@ -42,21 +44,34 @@ module.exports = class YamahaZone {
     }
   }
 
-  getServices() {
-    var that = this;
-    var informationService = new Service.AccessoryInformation();
-    var yamaha = this.yamaha;
+  /**
+   * Return a fully configured Accessory
+   */
+  getAccessory() {
+    this.log("Getting accessory for ", this.name + this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0] + this.zone);
+    const uuid = this.api.hap.uuid.generate(this.name + this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0] + this.zone);
+    var accessory = new this.api.platformAccessory(this.name, uuid);
+    accessory.addService(this.getServices(accessory));
+    return accessory;
+  }
 
+  getServices(accessory) {
+    var informationService = accessory.getService(this.api.hap.Service.AccessoryInformation) ||
+      accessory.addService(this.api.hap.Service.AccessoryInformation);
+
+    // console.log('informationService', informationService);
     informationService
-      .setCharacteristic(Characteristic.Name, this.name)
-      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
-      .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version)
-      .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
+      .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(this.api.hap.Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
+      .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, require('../package.json').version)
+      .setCharacteristic(this.api.hap.Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     if (this.zone === "Main_Zone") {
-      var mainPower = new Service.Switch("Yamaha Power");
-      mainPower.getCharacteristic(Characteristic.On)
+      var mainPower = accessory.getService(this.api.hap.Service.Switch) ||
+        accessory.addService(this.api.hap.Service.Switch, "Yamaha Power");
+
+      mainPower.getCharacteristic(this.api.hap.Characteristic.On)
         .on('get', function (callback, context) {
           yamaha.isOn().then(
             function (result) {
@@ -76,8 +91,9 @@ module.exports = class YamahaZone {
         }.bind(this));
     }
 
-    var zoneService = new Service.Fan(this.name);
-    zoneService.getCharacteristic(Characteristic.On)
+    var zoneService = accessory.getService(this.api.hap.Service.Fan) ||
+      accessory.addService(this.api.hap.Service.Fan, this.name);
+    zoneService.getCharacteristic(this.api.hap.Characteristic.On)
       .on('get', function (callback, context) {
         yamaha.isOn(that.zone).then(
           function (result) {
@@ -96,7 +112,11 @@ module.exports = class YamahaZone {
         });
       }.bind(this));
 
-    zoneService.addCharacteristic(new Characteristic.RotationSpeed())
+
+    var volume = zoneService.getCharacteristic(this.api.hap.Characteristic.RotationSpeed) ||
+      zoneService.addCharacteristic(this.api.hap.Characteristic.RotationSpeed);
+
+    volume
       .on('get', function (callback, context) {
         yamaha.getBasicInfo(that.zone).then(function (basicInfo) {
           var v = basicInfo.getVolume() / 10.0;
@@ -119,10 +139,6 @@ module.exports = class YamahaZone {
           callback(error);
         });
       });
-    if (mainPower) {
-      return [informationService, zoneService, mainPower];
-    } else {
-      return [informationService, zoneService];
-    }
+    return (accessory);
   }
 };
