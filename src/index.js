@@ -320,7 +320,7 @@ YamahaParty.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
+      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var partyService = new Service.Switch(this.name);
@@ -383,7 +383,7 @@ YamahaSpotify.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
+      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
     services.push(informationService);
     ["Play", "Pause", "Skip Fwd", "Skip Rev"].forEach(function (button) {
@@ -450,7 +450,7 @@ YamahaInputService.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
+      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var inputSwitchService = new Service.Switch(this.name);
@@ -529,7 +529,7 @@ YamahaSwitch.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
+      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var switchService = new Service.Switch(this.name);
@@ -603,7 +603,7 @@ YamahaZone.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
+      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     if (this.zone === "Main_Zone") {
@@ -730,7 +730,7 @@ YamahaAVRAccessory.prototype = {
       .setCharacteristic(Characteristic.Name, this.name)
       .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(Characteristic.Model, this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0])
-      .setCharacteristic(Characteristic.FirmwareRevision, require('./package.json').version)
+      .setCharacteristic(Characteristic.FirmwareRevision, require('../package.json').version)
       .setCharacteristic(Characteristic.SerialNumber, this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]);
 
     var switchService = new Service.Switch("Yamaha Power");
