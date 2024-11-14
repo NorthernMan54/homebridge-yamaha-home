@@ -565,7 +565,8 @@ function YamahaZone(log, config, name, yamaha, sysConfig, zone) {
   this.gapVolume = this.maxVolume - this.minVolume;
 
   this.zone = zone;
-  this.name = name;
+  this.zoneNameMap = config["zone_name_map"] || {};
+  this.name = this.zoneNameMap[name] || name;
 }
 
 YamahaZone.prototype = {
