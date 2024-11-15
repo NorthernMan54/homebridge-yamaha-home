@@ -23,6 +23,7 @@
     "debug": "^4.3.7",
     "inherits": "^2.0.1",
     "ip": "^=1.1.5",
+    "node-cache": "^5.1.2",
     "q": "2.0.3",
     "request": "2.88.2",
     "semver": "^7.6.3",
@@ -60,7 +61,7 @@
       "**/*.spec.js",
       "**/*.test.js"
     ],
-    "exec": "DEBUG=HAP-NodeJS:HAPServer,yamaha* ~/npm/bin/homebridge -U ./test/hbConfig -I -T -D -P .",
+    "exec": "DEBUG=HAP-NodeJS:HAPServer,yamaha*,Yamaha*- ~/npm/bin/homebridge -U ./test/hbConfig -T -D -P .",
     "signal": "SIGTERM",
     "env": {
       "NODE_OPTIONS": "--trace-warnings"

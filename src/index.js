@@ -5,6 +5,7 @@ const Yamaha = require('yamaha-nodejs');
 const bonjour = require('bonjour')();
 const ip = require('ip');
 
+const CachedYamaha = require('./CachedYamaha'); // Import CachedYamaha
 const YamahaZone = require('./yamahaZone.js');
 const YamahaParty = require('./YamahaParty.js');
 const YamahaSpotify = require('./YamahaSpotify.js');
@@ -98,7 +99,6 @@ class YamahaAVRPlatform {
         clearTimeout(timer);
         browser.stop();
         this.log.success(`Discovery finished, found ${this.receiverCount} Yamaha AVR's and creating ${this.receivers.length} HomeKit accessories.`);
-        // console.log(this.receivers);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.receivers);
       } else {
         console.log('Tick');
@@ -108,6 +108,16 @@ class YamahaAVRPlatform {
     };
 
     timer = setTimeout(timeoutFunction, checkCyclePeriod);
+
+    this.statusTimer = setInterval(async () => { 
+      this.log('Checking status', this.receivers.length);
+      for (const receiver of this.receivers) {
+        if (receiver.context.updateStatus?.length)
+          for (const updateStatus of receiver.context.updateStatus) {
+            await updateStatus();
+          }
+      }
+     }, 10000);
   };
 
   configureAccessory(accessory) {
@@ -126,10 +136,13 @@ class YamahaAVRPlatform {
     if (service.port !== 80) return; // yamaha-nodejs only supports port 80
 
     const yamaha = new Yamaha(service.host);
+    const cachedYamaha = new CachedYamaha(yamaha, { stdTTL: 30, checkperiod: 60 }); // Cache wrapper
+    const yamahaProxy = cachedYamaha.createProxy(); // Cached proxy for API calls
+
     try {
-      const systemConfig = await yamaha.getSystemConfig().catch(e => { e; return null; });;
+      const systemConfig = await yamahaProxy.getSystemConfig().catch(e => { e; return null; });
       if (systemConfig?.YAMAHA_AV) {
-        await this.createReceiver(service.name, yamaha, systemConfig);
+        await this.createReceiver(service.name, yamahaProxy, systemConfig);
       } else {
         this.log.warn(`Failed to fetch system config for ${service.name}. Not a Yamaha AVR.`);
       }

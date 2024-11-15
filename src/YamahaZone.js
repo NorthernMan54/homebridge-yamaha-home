@@ -9,6 +9,7 @@ class YamahaZone {
     this.log = externalContext.log;
     this.externalContext = externalContext;
     this.yamaha = yamaha;
+
     this.sysConfig = sysConfig;
 
     this.minVolume = this.config["min_volume"] || -65.0;
@@ -19,6 +20,7 @@ class YamahaZone {
     this.zoneNameMap = this.config["zone_name_map"] || {};
     this.name = this.zoneNameMap[name] || name;
 
+    this.statusList = [];
     return this.getAccessory();
   }
 
@@ -49,6 +51,15 @@ class YamahaZone {
     }
   }
 
+  async getStatus() {
+    console.log('getStatus');
+    for( const status in this.statusList) {
+      if (status === this.zone) {
+        await this.statusList[status];
+      }
+    }
+  }
+
   getAccessory() {
     const uuid = this.api.hap.uuid.generate(
       `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
@@ -59,6 +70,7 @@ class YamahaZone {
     } else {
       accessory = this.accessories.find(accessory => accessory.UUID === uuid);
     }
+    accessory.context.updateStatus = [];
     this.getServices(accessory);
     return accessory;
   }
@@ -94,6 +106,7 @@ class YamahaZone {
             const result = await this.yamaha.isOn();
             callback(null, result);
           } catch (error) {
+            this.log.error('Error getting Main Power:', error);
             callback(error, false);
           }
         })
