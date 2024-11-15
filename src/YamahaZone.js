@@ -1,21 +1,25 @@
 const debug = require('debug')('yamaha-Zone');
+const packageJson = require('../package.json');
 
 class YamahaZone {
   constructor(externalContext, name, yamaha, sysConfig, zone) {
+    this.config = externalContext.config;
+    this.accessories = externalContext.accessories;
+    this.api = externalContext.api;
+    this.log = externalContext.log;
     this.externalContext = externalContext;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.log = this.externalContext.log;
-    this.api = this.externalContext.api;
-
-    this.minVolume = this.externalContext.config["min_volume"] || -65.0;
-    this.maxVolume = this.externalContext.config["max_volume"] || -10.0;
+    this.minVolume = this.config["min_volume"] || -65.0;
+    this.maxVolume = this.config["max_volume"] || -10.0;
     this.gapVolume = this.maxVolume - this.minVolume;
 
     this.zone = zone;
-    this.zoneNameMap = this.externalContext.config["zone_name_map"] || {};
+    this.zoneNameMap = this.config["zone_name_map"] || {};
     this.name = this.zoneNameMap[name] || name;
+
+    return this.getAccessory();
   }
 
   async setPlaying(playing) {
@@ -46,19 +50,21 @@ class YamahaZone {
   }
 
   getAccessory() {
-    this.log(
-      "Getting accessory for ",
-      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
-    );
     const uuid = this.api.hap.uuid.generate(
       `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
     );
-    const accessory = new this.api.platformAccessory(this.name, uuid);
-    accessory.addService(this.getServices(accessory));
+    var accessory;
+    if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
+     accessory = new this.api.platformAccessory(this.name, uuid);
+    } else {
+      accessory = this.accessories.find(accessory => accessory.UUID === uuid);
+    }
+    this.getServices(accessory);
     return accessory;
   }
 
   getServices(accessory) {
+
     const informationService =
       accessory.getService(this.api.hap.Service.AccessoryInformation) ||
       accessory.addService(this.api.hap.Service.AccessoryInformation);
@@ -70,10 +76,7 @@ class YamahaZone {
         this.api.hap.Characteristic.Model,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
       )
-      .setCharacteristic(
-        this.api.hap.Characteristic.FirmwareRevision,
-        require('../package.json').version
-      )
+      .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, packageJson.version)
       .setCharacteristic(
         this.api.hap.Characteristic.SerialNumber,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
@@ -154,7 +157,6 @@ class YamahaZone {
           callback(error);
         }
       });
-
     return accessory;
   }
 }

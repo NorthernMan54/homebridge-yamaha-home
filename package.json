@@ -56,8 +56,11 @@
       "src"
     ],
     "ext": "js,cjs,mjs,json",
-    "ignore": [],
-    "exec": "DEBUG=yamaha-home ~/npm/bin/homebridge -U ./test/hbConfig -T -D -P .",
+    "ignore": [
+      "**/*.spec.js",
+      "**/*.test.js"
+    ],
+    "exec": "DEBUG=HAP-NodeJS:HAPServer,yamaha* ~/npm/bin/homebridge -U ./test/hbConfig -I -T -D -P .",
     "signal": "SIGTERM",
     "env": {
       "NODE_OPTIONS": "--trace-warnings"

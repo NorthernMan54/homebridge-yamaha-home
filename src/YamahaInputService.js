@@ -1,55 +1,66 @@
 const debug = require('debug')('yamaha-input');
-const { Service, Characteristic } = require('hap-nodejs'); // Ensure correct imports based on your environment
+const packageJson = require('../package.json');
 
 class YamahaInputService {
-  constructor(log, config, name, yamaha, sysConfig) {
-    this.log = log;
-    this.config = config;
+  constructor(externalContext, name, yamaha, sysConfig) {
+    this.log = externalContext.log;
+    this.config = externalContext.config;
+    this.api = externalContext.api;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.nameSuffix = config["name_suffix"] || " Party Mode";
-    this.zone = config["zone"] || 1;
+    this.nameSuffix = this.config["name_suffix"] || " Party Mode";
+    this.zone = this.config["zone"] || 1;
     this.name = name;
-    this.setDefaultVolume = config["set_default_volume"];
+    this.setDefaultVolume = this.config["set_default_volume"];
     this.serviceName = name;
-    this.defaultServiceName = config["default_service_name"];
-    this.setMainInputTo = config["setMainInputTo"];
-    this.playVolume = config["play_volume"];
-    this.minVolume = config["min_volume"] || -65.0;
-    this.maxVolume = config["max_volume"] || -10.0;
+    this.defaultServiceName = this.config["default_service_name"];
+    this.setMainInputTo = this.config["setMainInputTo"];
+    this.playVolume = this.config["play_volume"];
+    this.minVolume = this.config["min_volume"] || -65.0;
+    this.maxVolume = this.config["max_volume"] || -10.0;
     this.gapVolume = this.maxVolume - this.minVolume;
-    this.showInputName = config["show_input_name"] || "no";
-    this.setInputTo = config["setInputTo"] || this.setMainInputTo;
-    this.setScene = config["set_scene"] || {}; // Scene Feature
+    this.showInputName = this.config["show_input_name"] || "no";
+    this.setInputTo = this.config["setInputTo"] || this.setMainInputTo;
+    this.setScene = this.config["set_scene"] || {}; // Scene Feature
 
     this.log(`Adding Input Switch ${name}`);
+    return this.getAccessory();
   }
 
-  getServices() {
-    const informationService = new Service.AccessoryInformation();
+  getAccessory() {
+    const uuid = this.api.hap.uuid.generate(
+      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
+    );
+    const accessory = new this.api.platformAccessory(this.name, uuid);
+    this.getServices(accessory);
+    return accessory;
+  }
+
+  getServices(accessory) {
+    const informationService =
+      accessory.getService(this.api.hap.Service.AccessoryInformation) ||
+      accessory.addService(this.api.hap.Service.AccessoryInformation);
 
     informationService
-      .setCharacteristic(Characteristic.Name, this.name)
-      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(
-        Characteristic.Model,
+        this.api.hap.Characteristic.Model,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
       )
+      .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, packageJson.version)
       .setCharacteristic(
-        Characteristic.FirmwareRevision,
-        require('../package.json').version
-      )
-      .setCharacteristic(
-        Characteristic.SerialNumber,
+        this.api.hap.Characteristic.SerialNumber,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
       );
 
-    const inputSwitchService = new Service.Switch(this.name);
-    this.inputSwitchService = inputSwitchService;
+    const inputSwitchService =
+      accessory.getService(this.api.hap.Service.Switch) ||
+      accessory.addService(this.api.hap.Service.Switch, this.name);
 
     inputSwitchService
-      .getCharacteristic(Characteristic.On)
+      .getCharacteristic(this.api.hap.Characteristic.On)
       .on('get', async (callback) => {
         try {
           const result = await this.yamaha.getCurrentInput();
@@ -88,7 +99,7 @@ class YamahaInputService {
         }
 
         setTimeout(() => {
-          inputSwitchService.setCharacteristic(Characteristic.On, 0);
+          inputSwitchService.setCharacteristic(this.api.hap.Characteristic.On, 0);
         }, 5 * 1000);
       });
 

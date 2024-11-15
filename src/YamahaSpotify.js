@@ -1,57 +1,66 @@
 const debug = require('debug')('yamaha-Spotify');
-const { Service, Characteristic } = require('hap-nodejs'); // Ensure these are imported based on your environment
 
 class YamahaSpotify {
-  constructor(log, config, name, yamaha, sysConfig) {
-    this.log = log;
-    this.config = config;
+  constructor(externalContext, name, yamaha, sysConfig) {
+    this.log = externalContext.log;
+    this.config = externalContext.config;
+    this.api = externalContext.api;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.nameSuffix = config["name_suffix"] || " Party Mode";
-    this.zone = config["zone"] || 1;
-    this.name = `Spotify (${name})`;
+    this.nameSuffix = this.config["name_suffix"] || " Party Mode";
+    this.zone = this.config["zone"] || 1;
+    this.name = `Spotify '${name}`;
     this.serviceName = name;
-    this.setMainInputTo = config["setMainInputTo"];
+    this.setMainInputTo = this.config["setMainInputTo"];
     this.playVolume = this.config["play_volume"];
-    this.minVolume = config["min_volume"] || -65.0;
-    this.maxVolume = config["max_volume"] || -10.0;
+    this.minVolume = this.config["min_volume"] || -65.0;
+    this.maxVolume = this.config["max_volume"] || -10.0;
     this.gapVolume = this.maxVolume - this.minVolume;
-    this.showInputName = config["show_input_name"] || "no";
+    this.showInputName = this.config["show_input_name"] || "no";
 
     this.log(`Adding Spotify button ${this.name}`);
+    return this.getAccessory();
   }
 
-  getServices() {
+  getAccessory() {
+    const uuid = this.api.hap.uuid.generate(
+      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
+    );
+    const accessory = new this.api.platformAccessory(this.name, uuid);
+    this.getServices(accessory);
+    return accessory;
+  }
+
+  getServices(accessory) {
     const services = [];
-    const informationService = new Service.AccessoryInformation();
+    const informationService =
+      accessory.getService(this.api.hap.Service.AccessoryInformation) ||
+      accessory.addService(this.api.hap.Service.AccessoryInformation);
 
     informationService
-      .setCharacteristic(Characteristic.Name, this.name)
-      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(
-        Characteristic.Model,
+        this.api.hap.Characteristic.Model,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
       )
       .setCharacteristic(
-        Characteristic.FirmwareRevision,
+        this.api.hap.Characteristic.FirmwareRevision,
         require('../package.json').version
       )
       .setCharacteristic(
-        Characteristic.SerialNumber,
+        this.api.hap.Characteristic.SerialNumber,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
       );
 
-    services.push(informationService);
-
     ["Play", "Pause", "Skip Fwd", "Skip Rev"].forEach((button) => {
-      const spotifyButton = new Service.Switch(`${button} (${this.serviceName})`);
-      spotifyButton.subtype = button;
+      const spotifyButton = accessory.addService(this.api.hap.Service.Switch, `${button} '${this.serviceName}`, button);
 
       debug("Adding Spotify Button", spotifyButton.displayName);
 
       spotifyButton
-        .getCharacteristic(Characteristic.On)
+        .getCharacteristic(this.api.hap.Characteristic.On)
         .on('set', async (on, callback) => {
           try {
             debug("Spotify Control", spotifyButton.displayName);
@@ -63,7 +72,7 @@ class YamahaSpotify {
 
               // Reset the button state after 5 seconds
               setTimeout(() => {
-                spotifyButton.setCharacteristic(Characteristic.On, 0);
+                spotifyButton.setCharacteristic(this.api.hap.Characteristic.On, 0);
               }, 5 * 1000);
             }
             callback(null);
@@ -73,10 +82,9 @@ class YamahaSpotify {
           }
         });
 
-      services.push(spotifyButton);
     });
 
-    return services;
+    return;
   }
 }
 

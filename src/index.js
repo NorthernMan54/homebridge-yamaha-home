@@ -1,12 +1,11 @@
 'use strict';
 
-const { inherits } = require('util');
 const debug = require('debug')('yamaha-home');
 const Yamaha = require('yamaha-nodejs');
 const bonjour = require('bonjour')();
 const ip = require('ip');
 
-const YamahaZone = require('./YamahaZone.js');
+const YamahaZone = require('./yamahaZone.js');
 const YamahaParty = require('./YamahaParty.js');
 const YamahaSpotify = require('./YamahaSpotify.js');
 const YamahaInputService = require('./YamahaInputService.js');
@@ -27,6 +26,7 @@ class YamahaAVRPlatform {
     this.api = api;
     this.log = log;
     this.config = config;
+    this.accessories = [];
 
     // Configuration properties
     const {
@@ -46,6 +46,7 @@ class YamahaAVRPlatform {
       party_switch,
       inputs_as_accessories = {},
       zone_controllers_only_for = null,
+      flush = false
     } = config;
 
     this.zone = zone;
@@ -65,6 +66,8 @@ class YamahaAVRPlatform {
     this.partySwitch = party_switch;
     this.inputAccessories = inputs_as_accessories;
     this.zoneControllersOnlyFor = zone_controllers_only_for;
+    this.flush = flush;
+    this.receiverCount = 0;
 
     this.receivers = [];
 
@@ -72,6 +75,11 @@ class YamahaAVRPlatform {
   }
 
   didFinishLaunching = () => {
+    if (this.flush) {
+      this.log('Flushing cached receivers');
+      this.api.unregisterPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.accessories);
+      this.accessories = [];
+    }
     this.log('Getting Yamaha AVR devices.');
 
     const browser = bonjour.find({ type: 'http' }, (service) => this.setupFromService(service));
@@ -89,9 +97,11 @@ class YamahaAVRPlatform {
       if (this.receivers.length >= this.expectedDevices || timeElapsed > this.discoveryTimeout * 1000) {
         clearTimeout(timer);
         browser.stop();
-        this.log(`Discovery finished, found ${this.receivers.length} Yamaha AVR devices.`);
+        this.log.success(`Discovery finished, found ${this.receiverCount} Yamaha AVR's and creating ${this.receivers.length} HomeKit accessories.`);
+        // console.log(this.receivers);
         this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.receivers);
       } else {
+        console.log('Tick');
         timeElapsed += checkCyclePeriod;
         timer = setTimeout(timeoutFunction, checkCyclePeriod);
       }
@@ -102,13 +112,13 @@ class YamahaAVRPlatform {
 
   configureAccessory(accessory) {
     this.log(`Configuring accessory: ${accessory.displayName}`);
-    this.receivers.push(accessory);
+    this.accessories.push(accessory);
   }
 
   setupFromService = async (service) => {
-    this.log('Possible Yamaha device discovered:', service.name, service.addresses);
+    this.log('Taking a look at:', service.name, service.addresses);
 
-    const ipv4Address = service.addresses.find(ip.isV4Format);
+    const ipv4Address = service.addresses?.find(ip.isV4Format);
     if (ipv4Address) {
       service.host = ipv4Address;
     }
@@ -117,14 +127,14 @@ class YamahaAVRPlatform {
 
     const yamaha = new Yamaha(service.host);
     try {
-      const systemConfig = await yamaha.getSystemConfig();
+      const systemConfig = await yamaha.getSystemConfig().catch(e => { e; return null; });;
       if (systemConfig?.YAMAHA_AV) {
         await this.createReceiver(service.name, yamaha, systemConfig);
       } else {
-        this.log(`Failed to fetch system config for ${service.name}. Not a Yamaha AVR.`);
+        this.log.warn(`Failed to fetch system config for ${service.name}. Not a Yamaha AVR.`);
       }
     } catch (error) {
-      this.log(`Error getting system config for ${service.name}:`, error);
+      this.log.error(`Error getting system config for ${service.name}:`, error);
     }
   };
 
@@ -137,11 +147,12 @@ class YamahaAVRPlatform {
       return;
     }
     sysIds[sysId] = true;
+    this.receiverCount++;
 
     this.log(`Found Yamaha ${sysModel} (${sysId}): "${name}"`);
 
     if (this.nozones) {
-      const accessory = new YamahaAVRAccessory(this.log, this.config, name, yamaha, sysConfig);
+      const accessory = new YamahaAVRAccessory(this, name, yamaha, sysConfig);
       this.receivers.push(accessory);
     }
 
@@ -150,18 +161,22 @@ class YamahaAVRPlatform {
         const inputNumber = parseInt(key);
         const accName = inputConfig.name;
         this.log(`Creating accessory "${accName}" for input ${inputNumber}`);
-        const accessory = new YamahaInputService(this.log, inputConfig, accName, yamaha, sysConfig, inputNumber);
-        this.receivers.push(accessory);
+        const accessory = new YamahaInputService({ log: this.log, config: inputConfig, api: this.api }, accName, yamaha, sysConfig, inputNumber);
+        if (!this.accessories.find(accessory => accessory.UUID === accessory.UUID)) {
+          this.receivers.push(accessory);
+        } else {
+          this.log.warn(`Input ${accName} already exists`);
+        }
       });
     }
 
     if (this.partySwitch === 'yes') {
-      const accessory = new YamahaParty(this.log, this.config, name, yamaha, sysConfig);
+      const accessory = new YamahaParty(this, name, yamaha, sysConfig);
       this.receivers.push(accessory);
     }
 
     if (this.spotifyControls) {
-      const accessory = new YamahaSpotify(this.log, this.config, name, yamaha, sysConfig);
+      const accessory = new YamahaSpotify(this, name, yamaha, sysConfig);
       this.receivers.push(accessory);
     }
 
@@ -169,11 +184,35 @@ class YamahaAVRPlatform {
     for (const zone of zones) {
       const basicInfo = await yamaha.getBasicInfo(zone);
       if (basicInfo.getVolume() !== -999) {
-        const zoneName = (await yamaha.getZoneConfig(zone))?.YAMAHA_AV?.[zone]?.Config[0]?.Name[0]?.Zone[0] || 'Main_Zone';
+        const zoneName = (await yamaha.getZoneConfig(zone))?.YAMAHA_AV?.[zone][0]?.Config[0]?.Name[0]?.Zone[0] || 'Main_Zone';
         if (!this.zoneControllersOnlyFor || this.zoneControllersOnlyFor.includes(zoneName)) {
-          this.log(`Creating zone controller for ${zoneName}`);
-          const accessory = new YamahaZone(this, zoneName, yamaha, sysConfig, zone);
-          this.receivers.push(accessory.getAccessory());
+          this.log.info(`Creating zone controller for ${zoneName}`);
+          const zoneAccessory = new YamahaZone(this, zoneName, yamaha, sysConfig, zone);
+          if (!this.accessories.find(accessory => accessory.UUID === zoneAccessory.UUID)) {
+            this.receivers.push(zoneAccessory);
+          } else {
+            this.log.warn(`Zone controller for ${zoneName} already exists`);
+          }
+        }
+      }
+    }
+
+    if (this.radioPresets) {
+      const presets = await yamaha.getTunerPresetList();
+      for (var preset in presets) {
+        this.log("Adding preset %s - %s", preset, presets[preset].value, this.presetNum);
+        var yamahaSwitch;
+        if (!this.presetNum) {
+          // preset by frequency
+          yamahaSwitch = new YamahaSwitch(this, presets[preset].value, yamaha, sysConfig, preset);
+        } else {
+          // Preset by number
+          yamahaSwitch = new YamahaSwitch(this, preset, yamaha, sysConfig, preset);
+        }
+        if (!this.accessories.find(accessory => accessory.UUID === yamahaSwitch.UUID)) {
+          this.receivers.push(yamahaSwitch);
+        } else {
+          this.log.warn(`Zone controller for ${presets[preset].value} already exists`);
         }
       }
     }

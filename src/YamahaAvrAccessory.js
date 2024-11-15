@@ -1,20 +1,25 @@
+const packageJson = require('../package.json');
+
+
 class YamahaAVRAccessory {
-  constructor(log, config, name, yamaha, sysConfig) {
-    this.log = log;
-    this.config = config;
+  constructor(externalContext, name, yamaha, sysConfig) {
+    this.log = externalContext.log;
+    this.config = externalContext.config;
+    this.api = externalContext.api;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.nameSuffix = config["name_suffix"] || " Speakers";
-    this.zone = config["zone"] || 1;
+    this.nameSuffix = this.config["name_suffix"] || " Speakers";
+    this.zone = this.config["zone"] || 1;
     this.name = name;
     this.serviceName = name + this.nameSuffix;
-    this.setMainInputTo = config["setMainInputTo"];
+    this.setMainInputTo = this.config["setMainInputTo"];
     this.playVolume = this.config["play_volume"];
-    this.minVolume = config["min_volume"] || -65.0;
-    this.maxVolume = config["max_volume"] || -10.0;
+    this.minVolume = this.config["min_volume"] || -65.0;
+    this.maxVolume = this.config["max_volume"] || -10.0;
     this.gapVolume = this.maxVolume - this.minVolume;
-    this.showInputName = config["show_input_name"] || "no";
+    this.showInputName = this.config["show_input_name"] || "no";
+    return this.getAccessory();
   }
 
   async setPlaying(playing) {
@@ -44,25 +49,38 @@ class YamahaAVRAccessory {
     }
   }
 
-  getServices() {
-    const that = this;
+  getAccessory() {
+    const uuid = this.api.hap.uuid.generate(
+      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
+    );
+    const accessory = new this.api.platformAccessory(this.name, uuid);
+    this.getServices(accessory);
+    return accessory;
+  }
 
-    const informationService = new Service.AccessoryInformation()
-      .setCharacteristic(Characteristic.Name, this.name)
-      .setCharacteristic(Characteristic.Manufacturer, "yamaha-home")
+  getServices(accessory) {
+    const informationService =
+      accessory.getService(this.api.hap.Service.AccessoryInformation) ||
+      accessory.addService(this.api.hap.Service.AccessoryInformation);
+
+    informationService
+      .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
       .setCharacteristic(
-        Characteristic.Model,
+        this.api.hap.Characteristic.Model,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
       )
-      .setCharacteristic(Characteristic.FirmwareRevision, require("../package.json").version)
+      .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, packageJson.version)
       .setCharacteristic(
-        Characteristic.SerialNumber,
+        this.api.hap.Characteristic.SerialNumber,
         this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
       );
 
-    const switchService = new Service.Switch("Yamaha Power");
+    const switchService = accessory.getService(this.api.hap.Service.Switch) ||
+      accessory.addService(this.api.hap.Service.Switch, "Yamaha Power");
+
     switchService
-      .getCharacteristic(Characteristic.On)
+      .getCharacteristic(this.api.hap.Characteristic.On)
       .on("get", async (callback) => {
         try {
           const result = await this.yamaha.isOn();
@@ -80,9 +98,11 @@ class YamahaAVRAccessory {
         }
       });
 
-    const mainService = new Service.Fan(this.name);
+    const mainService = accessory.getService(this.api.hap.Service.Fan) ||
+      accessory.addService(this.api.hap.Service.Fan, this.name);
+
     mainService
-      .getCharacteristic(Characteristic.On)
+      .getCharacteristic(this.api.hap.Characteristic.On)
       .on("get", async (callback) => {
         try {
           const result = await this.yamaha.isOn();
@@ -100,8 +120,10 @@ class YamahaAVRAccessory {
         }
       });
 
-    mainService
-      .addCharacteristic(new Characteristic.RotationSpeed())
+    const volume =
+      mainService.getCharacteristic(this.api.hap.Characteristic.RotationSpeed) ||
+      mainService.addCharacteristic(this.api.hap.Characteristic.RotationSpeed);
+    volume
       .on("get", async (callback) => {
         try {
           const basicInfo = await this.yamaha.getBasicInfo(this.zone);
@@ -122,8 +144,11 @@ class YamahaAVRAccessory {
         }
       });
 
-    const audioDeviceService = new Service.Speaker("Speaker");
-    const volCx = audioDeviceService.addCharacteristic(Characteristic.Volume);
+    const audioDeviceService =
+      accessory.getService(this.api.hap.Service.Speaker) ||
+      accessory.addService(this.api.hap.Service.Speaker, "Speaker");
+
+    const volCx = audioDeviceService.addCharacteristic(this.api.hap.Characteristic.Volume);
 
     volCx
       .on("get", async (callback) => {
@@ -146,7 +171,7 @@ class YamahaAVRAccessory {
         }
       });
 
-    const mutingCx = audioDeviceService.getCharacteristic(Characteristic.Mute);
+    const mutingCx = audioDeviceService.getCharacteristic(this.api.hap.Characteristic.Mute);
     mutingCx
       .on("get", async (callback) => {
         try {
@@ -167,32 +192,10 @@ class YamahaAVRAccessory {
         }
       });
 
-    const inputService = new YamahaAVRPlatform.InputService("Input Functions");
-    inputService
-      .getCharacteristic(YamahaAVRPlatform.Input)
-      .on("get", async (callback) => {
-        try {
-          const basicInfo = await this.yamaha.getBasicInfo();
-          callback(null, basicInfo.getCurrentInput());
-        } catch (error) {
-          callback(error, 0);
-        }
-      });
 
-    if (this.showInputName === "yes") {
-      const nameCx = inputService.addCharacteristic(YamahaAVRPlatform.InputName);
-      nameCx
-        .on("get", async (callback) => {
-          try {
-            const basicInfo = await this.yamaha.getBasicInfo();
-            const name = basicInfo.YAMAHA_AV.Main_Zone[0].Basic_Status[0].Input[0].Input_Sel_Item_Info[0].Src_Name[0].replace("Osdname:", "");
-            callback(null, name);
-          } catch (error) {
-            callback(error, 0);
-          }
-        });
-    }
 
-    return [informationService, switchService, audioDeviceService, inputService, mainService];
+    return [informationService, switchService, audioDeviceService, mainService];
   }
 }
+
+module.exports = YamahaAVRAccessory;

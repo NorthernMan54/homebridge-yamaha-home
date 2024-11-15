@@ -23,11 +23,34 @@
     },
     {
       "platform": "yamaha-home",
-      "discovery_timeout": 15,
       "radio_presets": true,
-      "preset_num": true
-  }
+      "preset_num": true,
+      "max_volume": 20,
+      "play_volume": -43,
+      "party_switch": "yes",
+      "spotify": true,
+      "flush": false,
+      "discovery_timeout": 1,
+      "inputs_as_accessories": {
+        "Yamaha": {
+          "1": {
+            "name": "Input Radio",
+            "setInputTo": "TUNER"
+          },
+          "2": {
+            "name": "Input Spotify",
+            "setInputTo": "Spotify"
+          },
+          "3": {
+            "name": "Input AV1",
+            "setInputTo": "AV1"
+          }
+        }
+      },
+      "manual_addresses": {
+        "Yamaha": "yamaha.local"
+      }
+    }
   ],
-  "accessories": [
-  ]
+  "accessories": []
 }
