@@ -43,7 +43,6 @@ class YamahaSpotify {
   }
 
   getServices(accessory) {
-    const services = [];
     const informationService =
       accessory.getService(this.api.hap.Service.AccessoryInformation) ||
       accessory.addService(this.api.hap.Service.AccessoryInformation);
@@ -64,22 +63,24 @@ class YamahaSpotify {
         this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
       );
 
+    //  public getServiceById<T extends WithUUID<typeof Service>>(uuid: string | T, subType: string): Service | undefined {
+
     ["Play", "Pause", "Skip Fwd", "Skip Rev"].forEach((button) => {
-      const spotifyButton = accessory.getService(this.api.hap.Service.Switch, `${button} '${this.serviceName}`, button) ||
+      const spotifyButton = accessory.getServiceById(this.api.hap.Service.Switch, button) ||
         accessory.addService(this.api.hap.Service.Switch, `${button} '${this.serviceName}`, button);
 
-      debug("Adding Spotify Button", spotifyButton.displayName);
+      debug("Adding Spotify Button %s to %s", button, spotifyButton.displayName);
 
       spotifyButton
         .getCharacteristic(this.api.hap.Characteristic.On)
         .onSet(async (value) => {
           try {
-            if (on) {
+            if (value) {
               // Send the command to Yamaha receiver
               await this.yamaha.SendXMLToReceiver(
                 `<YAMAHA_AV cmd="PUT"><Spotify><Play_Control><Playback>${spotifyButton.subtype}</Playback></Play_Control></Spotify></YAMAHA_AV>`
               );
-
+              debug(`Pressing Spotify button ${button} on ${this.name} to`, value);
               // Reset the button state after 5 seconds
               setTimeout(() => {
                 spotifyButton.setCharacteristic(this.api.hap.Characteristic.On, 0);
@@ -91,33 +92,8 @@ class YamahaSpotify {
         });
 
     });
-    accessory.context.updateStatus.push(this.getStatus);
+    // accessory.context.updateStatus.push(this.getStatus);
     return;
-  }
-
-  async getStatus(accessory) {
-    for (const service of accessory.services) {
-      try {
-        let value;
-        switch (service.UUID) {
-          case this.api.hap.Service.Switch.UUID:
-            const value = await accessory.context.yamaha.isPartyModeEnabled();
-            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(value);
-            debug('Updating Spotify %s Switch status to %s', service.displayName, value);
-            break;
-          case this.api.hap.Service.AccessoryInformation.UUID:
-            break;
-          default:
-            debug('Unknown service type: %s', service.UUID);
-            break;
-        }
-      } catch (error) {
-        this.log.error(
-          `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
-          error
-        );
-      }
-    }
   }
 }
 

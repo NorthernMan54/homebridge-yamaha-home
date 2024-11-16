@@ -1,3 +1,4 @@
+const debug = require('debug')('yamaha-Avr');
 const packageJson = require('../package.json');
 
 
@@ -212,13 +213,12 @@ class YamahaAVRAccessory {
         let value;
         switch (service.UUID) {
           case this.api.hap.Service.Switch.UUID:
-            value = await accessory.context.yamaha.getCurrentInput();
-            const isOn = value === this.setInputTo;
-            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(isOn);
-            debug('Updating Switch service %s to %s', accessory.context.zone, isOn);
+            value = await accessory.context.yamaha.isOn(accessory.context.zone);
+            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(value);
+            debug('Updating %s Switch service %s to %s', service.displayName, accessory.context.zone, value);
             break;
 
-          case this.api.hap.Service.Fan.UUID:
+          case this.api.hap.Service.Fan.UUID: {
             value = await accessory.context.yamaha.isOn(accessory.context.zone);
             service.updateCharacteristic(this.api.hap.Characteristic.On, value);
 
@@ -234,6 +234,7 @@ class YamahaAVRAccessory {
               percentage
             );
             break;
+          }
           case this.api.hap.Service.AccessoryInformation.UUID:
             break;
           default:

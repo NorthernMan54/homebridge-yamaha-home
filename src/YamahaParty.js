@@ -67,23 +67,25 @@ module.exports = class YamahaParty {
 
     partyService
       .getCharacteristic(this.api.hap.Characteristic.On)
+      /*
       .onGet(async () => {
         try {
           return await this.yamaha.isPartyModeEnabled();
         } catch (error) {
-          this.log.error('Error getting Main Power:', error);
+          this.log.error('Error getting Party mode:', error);
         }
       })
+      */
       .onSet(async (value) => {
         try {
-          if (on) {
+          if (value) {
             await this.yamaha.powerOn();
             await this.yamaha.partyModeOn();
           } else {
             await this.yamaha.partyModeOff();
           }
         } catch (error) {
-          this.log.error('Error setting Main Power:', error);
+          this.log.error('Error setting Party mode:', error);
         }
       });
 
@@ -98,9 +100,9 @@ module.exports = class YamahaParty {
         let value;
         switch (service.UUID) {
           case this.api.hap.Service.Switch.UUID:
-            const value = await accessory.context.yamaha.isPartyModeEnabled();
+            value = await accessory.context.yamaha.isPartyModeEnabled();
             service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(value);
-            debug('Updating Party Switch status to %s', value);
+            debug('Status update Party Switch status to %s', value);
             break;
           case this.api.hap.Service.AccessoryInformation.UUID:
             break;

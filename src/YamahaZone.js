@@ -96,6 +96,7 @@ class YamahaZone {
 
       mainPower
         .getCharacteristic(this.api.hap.Characteristic.On)
+        /*
         .onGet(async () => {
           try {
             return await this.yamaha.isOn();
@@ -103,6 +104,7 @@ class YamahaZone {
             this.log.error('Error getting Main Power:', error);
           }
         })
+        */
         .onSet(async (value) => {
           try {
             await this.setPlaying(value);
@@ -119,6 +121,7 @@ class YamahaZone {
 
     zoneService
       .getCharacteristic(this.api.hap.Characteristic.On)
+      /*
       .onGet(async () => {
         try {
           return await this.yamaha.isOn(this.zone);
@@ -126,6 +129,7 @@ class YamahaZone {
           this.log.error('Error getting Power:', error);
         }
       })
+      */
       .onSet(async (value) => {
         try {
           await this.setPlaying(value);
@@ -139,6 +143,7 @@ class YamahaZone {
       zoneService.addCharacteristic(this.api.hap.Characteristic.RotationSpeed);
 
     volume
+    /*
       .onGet(async () => {
         try {
           const basicInfo = await this.yamaha.getBasicInfo(this.zone);
@@ -151,6 +156,7 @@ class YamahaZone {
           this.log.error('Error getting volume:', error);
         }
       })
+      */
       .onSet(async (value) => {
         try {
           const v = Math.round(((value / 100) * this.gapVolume) + this.minVolume) * 10.0;
@@ -170,13 +176,12 @@ class YamahaZone {
         let value;
         switch (service.UUID) {
           case this.api.hap.Service.Switch.UUID:
-            value = await accessory.context.yamaha.getCurrentInput();
-            const isOn = value === this.setInputTo;
-            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(isOn);
-            debug('Updating Switch service %s to %s', accessory.context.zone, isOn);
+            value = await accessory.context.yamaha.isOn(accessory.context.zone);
+            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(value);
+            debug('Status update %s Switch service %s to %s', service.displayName, accessory.context.zone, value);
             break;
 
-          case this.api.hap.Service.Fan.UUID:
+          case this.api.hap.Service.Fan.UUID: {
             value = await accessory.context.yamaha.isOn(accessory.context.zone);
             service.updateCharacteristic(this.api.hap.Characteristic.On, value);
 
@@ -186,12 +191,13 @@ class YamahaZone {
             percentage = Math.max(0, Math.min(100, Math.round(percentage)));
             service.getCharacteristic(this.api.hap.Characteristic.RotationSpeed).updateValue(percentage);
             debug(
-              'Updating Fan service %s On to %s, and Volume to %s',
+              'Status update Fan service %s On to %s, and Volume to %s',
               accessory.context.zone,
               value,
               percentage
             );
             break;
+          }
           case this.api.hap.Service.AccessoryInformation.UUID:
             break;
           default:
