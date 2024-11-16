@@ -29,7 +29,7 @@
       "play_volume": -43,
       "party_switch": "yes",
       "spotify": true,
-      "flush": true,
+      "flush": false,
       "discovery_timeout": 1,
       "inputs_as_accessories": {
         "Yamaha": {

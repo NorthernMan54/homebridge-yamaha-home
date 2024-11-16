@@ -6,6 +6,7 @@ class YamahaAVRAccessory {
     this.log = externalContext.log;
     this.config = externalContext.config;
     this.api = externalContext.api;
+    this.accessories = externalContext.accessories;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
@@ -53,7 +54,15 @@ class YamahaAVRAccessory {
     const uuid = this.api.hap.uuid.generate(
       `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
     );
-    const accessory = new this.api.platformAccessory(this.name, uuid);
+    var accessory;
+    if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
+      this.log.info(`Creating Zone accessory for ${this.name}`);
+      accessory = new this.api.platformAccessory(this.name, uuid);
+    } else {
+      this.log.info(`Wiring Zone accessory for ${this.name}`);
+      accessory = this.accessories.find(accessory => accessory.UUID === uuid);
+    }
+    accessory.context = { yamaha: this.yamaha, zone: this.zone, updateStatus: [] };
     this.getServices(accessory);
     return accessory;
   }
@@ -103,20 +112,18 @@ class YamahaAVRAccessory {
 
     mainService
       .getCharacteristic(this.api.hap.Characteristic.On)
-      .on("get", async (callback) => {
+      .onGet(async () => {
         try {
-          const result = await this.yamaha.isOn();
-          callback(null, result);
+          return await this.yamaha.isOn();
         } catch (error) {
-          callback(error, false);
+          this.log.error('Error getting Main Power:', error);
         }
       })
-      .on("set", async (powerOn, callback) => {
+      .onSet(async (value) => {
         try {
-          await this.setPlaying(powerOn);
-          callback(null);
+          await this.setPlaying(value);
         } catch (error) {
-          callback(error);
+          this.log.error('Error setting Main Power:', error);
         }
       });
 
@@ -124,23 +131,25 @@ class YamahaAVRAccessory {
       mainService.getCharacteristic(this.api.hap.Characteristic.RotationSpeed) ||
       mainService.addCharacteristic(this.api.hap.Characteristic.RotationSpeed);
     volume
-      .on("get", async (callback) => {
+      .onGet(async () => {
         try {
           const basicInfo = await this.yamaha.getBasicInfo(this.zone);
-          const v = basicInfo.getVolume() / 10.0;
-          const p = Math.min(100, Math.max(0, Math.round(100 * ((v - this.minVolume) / this.gapVolume))));
-          callback(null, p);
+          const v = await basicInfo.getVolume() / 10.0;
+          let p = 100 * ((v - this.minVolume) / this.gapVolume);
+          p = Math.max(0, Math.min(100, Math.round(p)));
+          debug(`Got volume percent of ${v}%, ${p}%`, this.zone);
+          return p
         } catch (error) {
-          callback(error, 0);
+          this.log.error('Error getting volume:', error);
         }
       })
-      .on("set", async (p, callback) => {
+      .onSet(async (value) => {
         try {
-          const v = Math.round(((p / 100) * this.gapVolume) + this.minVolume) * 10.0;
-          await this.yamaha.setVolumeTo(v, this.zone);
-          callback(null);
+          const v = Math.round(((value / 100) * this.gapVolume) + this.minVolume) * 10.0;
+          debug(`Setting volume to ${v}%, ${value}%`, this.zone);
+          return await this.yamaha.setVolumeTo(v, this.zone);
         } catch (error) {
-          callback(error);
+          this.log.error('Error setting volume:', error);
         }
       });
 
@@ -193,8 +202,51 @@ class YamahaAVRAccessory {
       });
 
 
-
+    accessory.context.updateStatus.push(this.getStatus);
     return [informationService, switchService, audioDeviceService, mainService];
+  }
+
+  async getStatus(accessory) {
+    for (const service of accessory.services) {
+      try {
+        let value;
+        switch (service.UUID) {
+          case this.api.hap.Service.Switch.UUID:
+            value = await accessory.context.yamaha.getCurrentInput();
+            const isOn = value === this.setInputTo;
+            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(isOn);
+            debug('Updating Switch service %s to %s', accessory.context.zone, isOn);
+            break;
+
+          case this.api.hap.Service.Fan.UUID:
+            value = await accessory.context.yamaha.isOn(accessory.context.zone);
+            service.updateCharacteristic(this.api.hap.Characteristic.On, value);
+
+            const basicInfo = await accessory.context.yamaha.getBasicInfo(accessory.context.zone);
+            const volume = await basicInfo.getVolume() / 10.0;
+            let percentage = 100 * ((volume - this.minVolume) / this.gapVolume);
+            percentage = Math.max(0, Math.min(100, Math.round(percentage)));
+            service.getCharacteristic(this.api.hap.Characteristic.RotationSpeed).updateValue(percentage);
+            debug(
+              'Updating Fan service %s On to %s, and Volume to %s',
+              accessory.context.zone,
+              value,
+              percentage
+            );
+            break;
+          case this.api.hap.Service.AccessoryInformation.UUID:
+            break;
+          default:
+            debug('Unknown service type: %s', service.UUID);
+            break;
+        }
+      } catch (error) {
+        this.log.error(
+          `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
+          error
+        );
+      }
+    }
   }
 }
 

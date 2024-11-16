@@ -17,12 +17,12 @@ class CachedYamaha {
    */
   async getCached(key, fetchFunction) {
     if (this.cache.has(key)) {
-      console.log(`Cache hit for key: ${key}`);
+      // console.log(`Cache hit for key: ${key}`);
       return this.cache.get(key);
     }
 
     const value = await fetchFunction();
-    console.log(`Cache miss for key: ${key}`);
+    // console.log(`Cache miss for key: ${key}`);
     this.cache.set(key, value);
     return value;
   }
@@ -43,8 +43,9 @@ class CachedYamaha {
             const propName = String(prop).toLowerCase();
 
             // Bypass cache for methods starting with "set" or "power" party
-            if (propName.startsWith('set') || propName.startsWith('power') || propName.startsWith('send') || propName.startsWith('select') || propName.startsWith('party')) {
-              console.log(`direct for key: ${propName}`);
+            if (/^(set|power|send|select|party)/.test(propName)) {
+              // console.log(`direct for key: ${propName}`);
+              this.cache.flushAll(); // Clear the cache
               return originalMethod.apply(target, args);
             }
 

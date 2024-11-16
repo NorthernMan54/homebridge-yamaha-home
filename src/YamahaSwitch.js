@@ -5,6 +5,7 @@ class YamahaSwitch {
     this.log = externalContext.log;
     this.config = externalContext.config;
     this.api = externalContext.api;
+    this.accessories = externalContext.accessories;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
@@ -31,7 +32,15 @@ class YamahaSwitch {
     const uuid = this.api.hap.uuid.generate(
       `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
     );
-    const accessory = new this.api.platformAccessory(this.name, uuid);
+    var accessory;
+    if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
+      this.log.info(`Creating YamahaParty accessory for ${this.name}`);
+      accessory = new this.api.platformAccessory(this.name, uuid);
+    } else {
+      this.log.info(`Wiring YamahaParty accessory for ${this.name}`);
+      accessory = this.accessories.find(accessory => accessory.UUID === uuid);
+    }
+    accessory.context = { yamaha: this.yamaha, zone: this.zone, updateStatus: [] };
     this.getServices(accessory);
     return accessory;
   }

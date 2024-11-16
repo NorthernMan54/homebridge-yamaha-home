@@ -6,23 +6,25 @@ class YamahaInputService {
     this.log = externalContext.log;
     this.config = externalContext.config;
     this.api = externalContext.api;
+    this.accessories = externalContext.accessories;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.nameSuffix = this.config["name_suffix"] || " Party Mode";
-    this.zone = this.config["zone"] || 1;
-    this.name = name;
-    this.setDefaultVolume = this.config["set_default_volume"];
-    this.serviceName = name;
-    this.defaultServiceName = this.config["default_service_name"];
-    this.setMainInputTo = this.config["setMainInputTo"];
-    this.playVolume = this.config["play_volume"];
-    this.minVolume = this.config["min_volume"] || -65.0;
-    this.maxVolume = this.config["max_volume"] || -10.0;
-    this.gapVolume = this.maxVolume - this.minVolume;
-    this.showInputName = this.config["show_input_name"] || "no";
-    this.setInputTo = this.config["setInputTo"] || this.setMainInputTo;
-    this.setScene = this.config["set_scene"] || {}; // Scene Feature
+    // Constructor parameters and their usage review
+    // this.nameSuffix = this.config["name_suffix"] || " Party Mode"; // Not used
+    this.zone = this.config["zone"] || 1; // Used in multiple methods
+    this.name = name; // Used for accessory name and services
+    this.setDefaultVolume = this.config["set_default_volume"]; // Used in onSet for volume configuration
+    // this.serviceName = name; // Not used
+    // this.defaultServiceName = this.config["default_service_name"]; // Not used
+    this.setMainInputTo = this.config["setMainInputTo"]; // Used to set the input source
+    // this.playVolume = this.config["play_volume"]; // Not used
+    this.minVolume = this.config["min_volume"] || -65.0; // Used in getStatus for fan volume
+    this.maxVolume = this.config["max_volume"] || -10.0; // Used in getStatus for fan volume
+    this.gapVolume = this.maxVolume - this.minVolume; // Used in getStatus for volume percentage calculation
+    // this.showInputName = this.config["show_input_name"] || "no"; // Not used
+    this.setInputTo = this.config["setInputTo"] || this.setMainInputTo; // Used for setting input in onSet
+    this.setScene = this.config["set_scene"] || {}; // Used in onSet for scene configuration
 
     this.log(`Adding Input Switch ${name}`);
     return this.getAccessory();
@@ -32,7 +34,13 @@ class YamahaInputService {
     const uuid = this.api.hap.uuid.generate(
       `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
     );
-    const accessory = new this.api.platformAccessory(this.name, uuid);
+    var accessory;
+    if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
+      accessory = new this.api.platformAccessory(this.name, uuid);
+    } else {
+      accessory = this.accessories.find(accessory => accessory.UUID === uuid);
+    }
+    accessory.context = { yamaha: this.yamaha, zone: this.zone, updateStatus: [] };
     this.getServices(accessory);
     return accessory;
   }
@@ -61,49 +69,74 @@ class YamahaInputService {
 
     inputSwitchService
       .getCharacteristic(this.api.hap.Characteristic.On)
-      .on('get', async (callback) => {
-        try {
-          const result = await this.yamaha.getCurrentInput();
-          debug(`Current Input: ${result}, Button Input: ${this.setInputTo}`);
-          callback(null, result === this.setInputTo);
-        } catch (error) {
-          debug('Error getting input:', error);
-          callback(error);
-        }
+      .onGet(async () => {
+        return await this.yamaha.getCurrentInput();
       })
-      .on('set', async (on, callback) => {
+      .onSet(async (on) => {
         if (on) {
-          try {
-            debug('Setting Input', this.setInputTo);
+          debug('Setting Input', this.setInputTo);
+          await this.yamaha.powerOn();
+          await this.yamaha.setMainInputTo(this.setInputTo);
 
-            await this.yamaha.powerOn();
-            await this.yamaha.setMainInputTo(this.setInputTo);
-
-            if (this.setScene) {
-              await this.yamaha.SendXMLToReceiver(
-                `<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ${this.setScene}</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>`
-              );
-            }
-
-            if (this.setDefaultVolume) {
-              await this.yamaha.setVolumeTo(this.setDefaultVolume * 10, this.zone);
-            }
-
-            callback(null);
-          } catch (error) {
-            debug('Error setting input:', error);
-            callback(error);
+          if (this.setScene) {
+            await this.yamaha.SendXMLToReceiver(
+              `<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ${this.setScene}</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>`
+            );
           }
-        } else {
-          callback(null);
+
+          if (this.setDefaultVolume) {
+            await this.yamaha.setVolumeTo(this.setDefaultVolume * 10, this.zone);
+          }
         }
 
         setTimeout(() => {
-          inputSwitchService.setCharacteristic(this.api.hap.Characteristic.On, 0);
+          inputSwitchService.updateCharacteristic(this.api.hap.Characteristic.On, 0);
         }, 5 * 1000);
       });
-
+    accessory.context.updateStatus.push(this.getStatus);
     return [informationService, inputSwitchService];
+  }
+
+  async getStatus(accessory) {
+    for (const service of accessory.services) {
+      try {
+        let value;
+        switch (service.UUID) {
+          case this.api.hap.Service.Switch.UUID:
+            value = await accessory.context.yamaha.getCurrentInput();
+            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(value);
+            debug('Updating %s Switch service %s to %s', service.displayName, accessory.context.zone, value);
+            break;
+
+          case this.api.hap.Service.Fan.UUID:
+            value = await accessory.context.yamaha.isOn(accessory.context.zone);
+            service.updateCharacteristic(this.api.hap.Characteristic.On, value);
+
+            const basicInfo = await accessory.context.yamaha.getBasicInfo(accessory.context.zone);
+            const volume = await basicInfo.getVolume() / 10.0;
+            let percentage = 100 * ((volume - this.minVolume) / this.gapVolume);
+            percentage = Math.max(0, Math.min(100, Math.round(percentage)));
+            service.getCharacteristic(this.api.hap.Characteristic.RotationSpeed).updateValue(percentage);
+            debug(
+              'Updating Fan service %s On to %s, and Volume to %s',
+              accessory.context.zone,
+              value,
+              percentage
+            );
+            break;
+          case this.api.hap.Service.AccessoryInformation.UUID:
+            break;
+          default:
+            debug('Unknown service type: %s', service.UUID);
+            break;
+        }
+      } catch (error) {
+        this.log.error(
+          `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
+          error
+        );
+      }
+    }
   }
 }
 

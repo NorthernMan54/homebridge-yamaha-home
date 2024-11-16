@@ -61,7 +61,7 @@
       "**/*.spec.js",
       "**/*.test.js"
     ],
-    "exec": "DEBUG=HAP-NodeJS:HAPServer,yamaha*,Yamaha*- ~/npm/bin/homebridge -U ./test/hbConfig -T -D -P .",
+    "exec": "DEBUG=HAP-NodeJS*,yamaha*,Yamaha*- ~/npm/bin/homebridge -U ./test/hbConfig -I -T -D -P .",
     "signal": "SIGTERM",
     "env": {
       "NODE_OPTIONS": "--trace-warnings"
