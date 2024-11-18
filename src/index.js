@@ -7,7 +7,7 @@ const ip = require('ip');
 const process = require('process');
 
 const CachedYamaha = require('./CachedYamaha'); // Import CachedYamaha
-const YamahaZone = require('./yamahaZone.js');
+const YamahaZone = require('./YamahaZone.js');
 const YamahaParty = require('./YamahaParty.js');
 const YamahaSpotify = require('./YamahaSpotify.js');
 const YamahaInputService = require('./YamahaInputService.js');
