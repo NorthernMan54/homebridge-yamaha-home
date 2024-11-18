@@ -2,6 +2,7 @@
   "pluginAlias": "yamaha-home",
   "pluginType": "platform",
   "singular": true,
+  "headerDisplay": "<p align='center'><img width='250px' src='https://user-images.githubusercontent.com/3979615/71876008-d99d7400-3179-11ea-909b-9d2a3d1e670f.png'></p>\n\nThe **Homebridge Yamaha Home** plugin allows you to control your Yamaha Receiver HomeKit.",
   "schema": {
     "type": "object",
     "properties": {
