@@ -39,7 +39,6 @@
     "jest": "^29.7.0",
     "nodemon": "^3.1.7"
   },
-  "author": "neonightmare <neonightmare@gmail.com> (https://github.com/neonightmare)",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/NorthernMan54/homebridge-yamaha-home/issues"

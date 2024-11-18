@@ -20,11 +20,16 @@ class CachedYamaha {
       // console.log(`Cache hit for key: ${key}`);
       return this.cache.get(key);
     }
-
-    const value = await fetchFunction();
-    // console.log(`Cache miss for key: ${key}`);
-    this.cache.set(key, value);
-    return value;
+    try {
+      const value = await fetchFunction();
+      // console.log(`Cache miss for key: ${key}`);
+      this.cache.set(key, value);
+      return value;
+    }
+    catch (error) {
+      console.error('Error fetching value:', key, this.yamaha.ip);
+      return new Error('Communication Error');
+    }
   }
 
   /**

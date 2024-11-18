@@ -19,7 +19,8 @@
       "tempUnits": "c",
       "lang": "auto",
       "sudo": false,
-      "platform": "config"
+      "platform": "config",
+      "debug": true
     },
     {
       "platform": "yamaha-home",

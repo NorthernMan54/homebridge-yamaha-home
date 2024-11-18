@@ -4,6 +4,7 @@ const debug = require('debug')('yamaha-home');
 const Yamaha = require('yamaha-nodejs');
 const bonjour = require('bonjour')();
 const ip = require('ip');
+const process = require('process');
 
 const CachedYamaha = require('./CachedYamaha'); // Import CachedYamaha
 const YamahaZone = require('./yamahaZone.js');
@@ -102,22 +103,27 @@ class YamahaAVRPlatform {
         if (this.newReceivers.length) {
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.newReceivers);
         }
+        if ( !this.receiverCount ) {
+          this.log.error('No Yamaha AVR devices found. Please check your configuration or setup.');
+          process.exit(1);
+        }
         this.statusTimer = setInterval(async () => {
           // debug('Checking status', this.accessories.length);
           for (const accessory of this.accessories) {
             // this.log('Updating status', accessory.displayName, accessory.context.updateStatus?.length);
             if (accessory.context.updateStatus?.length) {
-              // console.log('Updating status', accessory.context.updateStatus?.length);
               for (const updateStatus of accessory.context.updateStatus) {
-                await updateStatus.call(this, accessory);
+                if (typeof updateStatus === 'function') {
+                  await updateStatus.call(this, accessory);
+                } else {
+                  this.log.error('Status update not a function for', accessory.displayName);
+
+                }
               }
-            } else {
-              // this.log.error('Status updates not implemented for', accessory.displayName);
             }
           }
         }, 10000);
       } else {
-        console.log('Tick');
         timeElapsed += checkCyclePeriod;
         timer = setTimeout(timeoutFunction, checkCyclePeriod);
       }

@@ -143,20 +143,20 @@ class YamahaZone {
       zoneService.addCharacteristic(this.api.hap.Characteristic.RotationSpeed);
 
     volume
-    /*
-      .onGet(async () => {
-        try {
-          const basicInfo = await this.yamaha.getBasicInfo(this.zone);
-          const v = await basicInfo.getVolume() / 10.0;
-          let p = 100 * ((v - this.minVolume) / this.gapVolume);
-          p = Math.max(0, Math.min(100, Math.round(p)));
-          debug(`Got volume percent of ${v}%, ${p}%`, this.zone);
-          return p
-        } catch (error) {
-          this.log.error('Error getting volume:', error);
-        }
-      })
-      */
+      /*
+        .onGet(async () => {
+          try {
+            const basicInfo = await this.yamaha.getBasicInfo(this.zone);
+            const v = await basicInfo.getVolume() / 10.0;
+            let p = 100 * ((v - this.minVolume) / this.gapVolume);
+            p = Math.max(0, Math.min(100, Math.round(p)));
+            debug(`Got volume percent of ${v}%, ${p}%`, this.zone);
+            return p
+          } catch (error) {
+            this.log.error('Error getting volume:', error);
+          }
+        })
+        */
       .onSet(async (value) => {
         try {
           const v = Math.round(((value / 100) * this.gapVolume) + this.minVolume) * 10.0;
@@ -172,21 +172,34 @@ class YamahaZone {
 
   async getStatus(accessory) {
     for (const service of accessory.services) {
-      try {
-        let value;
-        switch (service.UUID) {
-          case this.api.hap.Service.Switch.UUID:
+      //try {
+      let value;
+      switch (service.UUID) {
+        case this.api.hap.Service.Switch.UUID:
+          try {
             value = await accessory.context.yamaha.isOn(accessory.context.zone);
             service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(value);
-            debug('Status update %s Switch service %s to %s', service.displayName, accessory.context.zone, value);
-            break;
+          } catch (error) {
+            this.log.error('Error getting Power:', error);
+            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+            value = "error";
+          }
+          debug('Status update %s Switch service %s to %s', service.displayName, accessory.context.zone, value);
+          break;
 
-          case this.api.hap.Service.Fan.UUID: {
+        case this.api.hap.Service.Fan.UUID: {
+          try {
             value = await accessory.context.yamaha.isOn(accessory.context.zone);
             service.updateCharacteristic(this.api.hap.Characteristic.On, value);
-
-            const basicInfo = await accessory.context.yamaha.getBasicInfo(accessory.context.zone);
-            const volume = await basicInfo.getVolume() / 10.0;
+          } catch (error) {
+            this.log.error('Error getting Power:', error);
+            service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
+            break;
+          }
+          const basicInfo = await accessory.context.yamaha.getBasicInfo(accessory.context.zone);
+          
+          if (typeof basicInfo.getVolume === 'function') {
+            const volume = await basicInfo?.getVolume() / 10.0;
             let percentage = 100 * ((volume - this.minVolume) / this.gapVolume);
             percentage = Math.max(0, Math.min(100, Math.round(percentage)));
             service.getCharacteristic(this.api.hap.Characteristic.RotationSpeed).updateValue(percentage);
@@ -196,20 +209,27 @@ class YamahaZone {
               value,
               percentage
             );
-            break;
+          } else {
+            service.getCharacteristic(this.api.hap.Characteristic.RotationSpeed).updateValue(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
           }
-          case this.api.hap.Service.AccessoryInformation.UUID:
-            break;
-          default:
-            debug('Unknown service type: %s', service.UUID);
-            break;
+          break;
         }
-      } catch (error) {
-        this.log.error(
-          `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
-          error
-        );
+        case this.api.hap.Service.AccessoryInformation.UUID:
+          break;
+        default:
+          debug('Unknown service type: %s', service.UUID);
+          break;
       }
+      //} catch (error) {
+      // this.log.error(
+      //  `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
+      //error
+      //  );
+      //
+
+
+
+
     }
   }
 }
