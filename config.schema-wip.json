@@ -2,7 +2,7 @@
   "pluginAlias": "yamaha-home",
   "pluginType": "platform",
   "singular": true,
-  "headerDisplay": "<p align='center'><img width='250px' src='https://user-images.githubusercontent.com/3979615/71876008-d99d7400-3179-11ea-909b-9d2a3d1e670f.png'></p>\n\nThe **Homebridge Yamaha Home** plugin allows you to control your Yamaha Receiver HomeKit.",
+  "headerDisplay": "<p align='center'><img width='250px' src='https://raw.githubusercontent.com/NorthernMan54/homebridge-yamaha-home/refs/heads/beta-0.2.0/docs/yamaha_purple.svg'></p>\n\nThe **Homebridge Yamaha Home** plugin allows you to control your Yamaha Receiver HomeKit.",
   "schema": {
     "type": "object",
     "properties": {
@@ -27,32 +27,26 @@
         "title": "Main Input",
         "description": "Sets the input when turning on."
       },
-      "show_input_name": {
-        "type": "string",
-        "title": "Show Input Name",
-        "description": "Creates a button to display the selected input. Default: 'no'.",
-        "enum": ["yes", "no"],
-        "default": "no"
-      },
       "manual_addresses": {
-        "type": "object",
         "title": "Manual Addresses",
-        "description": "Manual IP addresses for Yamaha receivers.",
-        "additionalProperties": {
+        "type": "array",
+        "required": false,
+        "default": "",
+        "items": {
           "type": "string"
         }
       },
       "expected_devices": {
         "type": "number",
         "title": "Expected Devices",
-        "description": "Maximum number of accessories created. Default: 100.",
-        "default": 100
+        "description": "Maximum number of accessories created. Default: 5.",
+        "default": 5
       },
       "discovery_timeout": {
         "type": "number",
         "title": "Discovery Timeout",
-        "description": "Time to stay in discovery mode. Default: 30 seconds.",
-        "default": 30
+        "description": "Time to stay in discovery mode. Default: 10 seconds.",
+        "default": 10
       },
       "radio_presets": {
         "type": "boolean",
@@ -64,6 +58,12 @@
         "type": "boolean",
         "title": "Preset Numbers",
         "description": "Names the switch the preset number or frequency. Default: false.",
+        "default": false
+      },
+      "flush": {
+        "type": "boolean",
+        "title": "Flush receiver cache",
+        "description": "Removes all cached devices from homebridge.",
         "default": false
       },
       "zone": {
@@ -88,10 +88,9 @@
         }
       },
       "party_switch": {
-        "type": "string",
+        "type": "boolean",
         "title": "Party Switch",
-        "description": "Enable Party Mode Switch. Default: not set.",
-        "enum": ["yes", "no"]
+        "description": "Enable Party Mode Switch."
       },
       "inputs_as_accessories": {
         "type": "object",
@@ -136,7 +135,62 @@
         "description": "Do not create an accessory per zone. Default: false.",
         "default": false
       }
+    }
+  },
+  "form": [
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Create Switches for Various Functions",
+      "items": [
+        "radio_presets",
+        "preset_num",
+        "spotify",
+        "party_switch"
+      ]
     },
-    "required": ["platform"]
-  }
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Volume Settings",
+      "items": [
+        "play_volume",
+        "min_volume",
+        "max_volume"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Optional Settings",
+      "items": [
+        "setMainInputTo",
+        "zone",
+        "zone_controllers_only_for",
+        "zone_name_map",
+        "inputs_as_accessories",
+        "nozones"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Advanced Settings",
+      "items": [
+        "flush",
+        "discovery_timeout",
+        {
+          "key": "manual_addresses",
+          "type": "array",
+          "required": false,
+          "items": {
+            "title": "IP Address or hostname",
+            "description": "Addresses for your Yamaha receivers.  Only required if Bonjour/Autodetection doesn't work.",
+            "type": "string"
+          }
+        },
+        "expected_devices"
+      ]
+    }
+  ]
 }

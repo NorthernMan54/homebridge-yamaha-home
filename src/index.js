@@ -45,7 +45,7 @@ class YamahaAVRPlatform {
       manual_addresses = {},
       spotify = false,
       nozones = false,
-      party_switch,
+      party_switch = false,
       inputs_as_accessories = {},
       zone_controllers_only_for = null,
       flush = false
@@ -103,7 +103,7 @@ class YamahaAVRPlatform {
         if (this.newReceivers.length) {
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.newReceivers);
         }
-        if ( !this.receiverCount ) {
+        if (!this.receiverCount) {
           this.log.error('No Yamaha AVR devices found. Please check your configuration or setup.');
           process.exit(1);
         }
@@ -116,7 +116,7 @@ class YamahaAVRPlatform {
                 if (typeof updateStatus === 'function') {
                   await updateStatus.call(this, accessory);
                 } else {
-                  this.log.error('Status update not a function for', accessory.displayName);
+                  // this.log.error('Status update not a function for', accessory.displayName);
 
                 }
               }
@@ -203,7 +203,7 @@ class YamahaAVRPlatform {
       });
     }
 
-    if (this.partySwitch === 'yes') {
+    if (this.partySwitch) {
       const accessory = new YamahaParty(this, name, yamaha, sysConfig);
       if (!this.accessories.find(x => x.UUID === accessory.UUID)) {
         this.newReceivers.push(accessory);
