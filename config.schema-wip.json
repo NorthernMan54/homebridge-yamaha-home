@@ -1,0 +1,196 @@
+{
+  "pluginAlias": "yamaha-home",
+  "pluginType": "platform",
+  "singular": true,
+  "headerDisplay": "<p align='center'><img width='250px' src='https://raw.githubusercontent.com/NorthernMan54/homebridge-yamaha-home/refs/heads/beta-0.2.0/docs/yamaha_purple.svg'></p>\n\nThe **Homebridge Yamaha Home** plugin allows you to control your Yamaha Receiver HomeKit.",
+  "schema": {
+    "type": "object",
+    "properties": {
+      "play_volume": {
+        "type": "number",
+        "title": "Play Volume",
+        "description": "Sets the volume when turning on. Default: -48",
+        "default": -48
+      },
+      "min_volume": {
+        "type": "number",
+        "title": "Minimum Volume",
+        "description": "Sets the minimum volume level."
+      },
+      "max_volume": {
+        "type": "number",
+        "title": "Maximum Volume",
+        "description": "Sets the maximum volume level."
+      },
+      "setMainInputTo": {
+        "type": "string",
+        "title": "Main Input",
+        "description": "Sets the input when turning on."
+      },
+      "manual_addresses": {
+        "title": "Manual Addresses",
+        "type": "array",
+        "required": false,
+        "default": "",
+        "items": {
+          "type": "string"
+        }
+      },
+      "expected_devices": {
+        "type": "number",
+        "title": "Expected Devices",
+        "description": "Maximum number of accessories created. Default: 5.",
+        "default": 5
+      },
+      "discovery_timeout": {
+        "type": "number",
+        "title": "Discovery Timeout",
+        "description": "Time to stay in discovery mode. Default: 10 seconds.",
+        "default": 10
+      },
+      "radio_presets": {
+        "type": "boolean",
+        "title": "Radio Presets",
+        "description": "Create a switch for each radio preset. Default: false.",
+        "default": false
+      },
+      "preset_num": {
+        "type": "boolean",
+        "title": "Preset Numbers",
+        "description": "Names the switch the preset number or frequency. Default: false.",
+        "default": false
+      },
+      "flush": {
+        "type": "boolean",
+        "title": "Flush receiver cache",
+        "description": "Removes all cached devices from homebridge.",
+        "default": false
+      },
+      "zone": {
+        "type": "string",
+        "title": "Zone",
+        "description": "The zone name to control."
+      },
+      "zone_controllers_only_for": {
+        "type": "array",
+        "title": "Zone Controllers Only For",
+        "description": "List of zone names for which accessories will be created.",
+        "items": {
+          "type": "string"
+        }
+      },
+      "zone_name_map": {
+        "type": "object",
+        "title": "Zone Name Map",
+        "description": "Map of old zone names to new zone names.",
+        "additionalProperties": {
+          "type": "string"
+        }
+      },
+      "party_switch": {
+        "type": "boolean",
+        "title": "Party Switch",
+        "description": "Enable Party Mode Switch."
+      },
+      "inputs_as_accessories": {
+        "type": "object",
+        "title": "Inputs as Accessories",
+        "description": "Creates Input or Scene switches.",
+        "properties": {
+          "YamahaReceiver": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "title": "Accessory Name"
+                },
+                "setInputTo": {
+                  "type": "string",
+                  "title": "Set Input To"
+                },
+                "set_default_volume": {
+                  "type": "number",
+                  "title": "Set Default Volume"
+                },
+                "set_scene": {
+                  "type": "string",
+                  "title": "Set Scene"
+                }
+              }
+            }
+          }
+        }
+      },
+      "spotify": {
+        "type": "boolean",
+        "title": "Spotify Buttons",
+        "description": "Enable Spotify control buttons. Default: false.",
+        "default": false
+      },
+      "nozones": {
+        "type": "boolean",
+        "title": "No Zones",
+        "description": "Do not create an accessory per zone. Default: false.",
+        "default": false
+      }
+    }
+  },
+  "form": [
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Create Switches for Various Functions",
+      "items": [
+        "radio_presets",
+        "preset_num",
+        "spotify",
+        "party_switch"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Volume Settings",
+      "items": [
+        "play_volume",
+        "min_volume",
+        "max_volume"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Optional Settings",
+      "items": [
+        "setMainInputTo",
+        "zone",
+        "zone_controllers_only_for",
+        "zone_name_map",
+        "inputs_as_accessories",
+        "nozones"
+      ]
+    },
+    {
+      "type": "fieldset",
+      "expandable": true,
+      "title": "Advanced Settings",
+      "items": [
+        "flush",
+        "discovery_timeout",
+        {
+          "key": "manual_addresses",
+          "type": "array",
+          "required": false,
+          "items": {
+            "title": "IP Address or hostname",
+            "description": "Addresses for your Yamaha receivers.  Only required if Bonjour/Autodetection doesn't work.",
+            "type": "string"
+          }
+        },
+        "expected_devices"
+      ]
+    }
+  ]
+}
