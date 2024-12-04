@@ -1,12 +1,13 @@
 {
   "name": "homebridge-yamaha-home",
   "version": "0.2.0",
-  "description": "homebridge-plugin for Yamaha AVR https://github.com/nfarina/homebridge",
+  "description": "Control your Yamaha AVR",
   "main": "src/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/NorthernMan54/homebridge-yamaha-home.git"
   },
+  "author": "NorthernMan54",
   "preferGlobal": true,
   "keywords": [
     "homebridge-plugin",
