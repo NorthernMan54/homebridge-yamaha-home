@@ -1,7 +1,7 @@
 {
   "name": "homebridge-yamaha-home",
   "version": "0.2.0",
-  "description": "Control your Yamaha AVR",
+  "description": "Control your Yamaha AVR with Homebridge",
   "main": "src/index.js",
   "repository": {
     "type": "git",
