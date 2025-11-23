@@ -3,15 +3,13 @@ const packageJson = require('../package.json');
 
 class YamahaInputService {
   constructor(externalContext, name, yamaha, sysConfig) {
-    this.log = externalContext.log;
     this.config = externalContext.config;
+    this.log = externalContext.log;
     this.api = externalContext.api;
     this.accessories = externalContext.accessories;
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    // Constructor parameters and their usage review
-    // this.nameSuffix = this.config["name_suffix"] || " Party Mode"; // Not used
     this.zone = this.config["zone"] || 1; // Used in multiple methods
     this.name = name; // Used for accessory name and services
     this.setDefaultVolume = this.config["set_default_volume"]; // Used in onSet for volume configuration
