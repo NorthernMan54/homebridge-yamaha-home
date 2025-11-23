@@ -47,8 +47,9 @@
     "lint": "eslint --max-warnings=0 .",
     "lint:fix": "eslint --fix --max-warnings=0 .",
     "watch": "nodemon",
-    "test": "jest --detectOpenHandles",
-    "test-coverage": "jest --coverage"
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage"
   },
   "nodemonConfig": {
     "watch": [
@@ -77,6 +78,9 @@
       "!src/lib/definitions/generate-definitions.ts",
       "!src/lib/definitions/generator-configuration.ts",
       "!src/test-utils"
+    ],
+    "coveragePathIgnorePatterns": [
+      "/node_modules/"
     ]
   }
 }
