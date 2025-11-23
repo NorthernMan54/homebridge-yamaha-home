@@ -10,19 +10,19 @@ class YamahaInputService {
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.zone = this.config["zone"] || 1; // Used in multiple methods
+    this.zone = this.config['zone'] || 1; // Used in multiple methods
     this.name = name; // Used for accessory name and services
-    this.setDefaultVolume = this.config["set_default_volume"]; // Used in onSet for volume configuration
+    this.setDefaultVolume = this.config['set_default_volume']; // Used in onSet for volume configuration
     // this.serviceName = name; // Not used
     // this.defaultServiceName = this.config["default_service_name"]; // Not used
-    this.setMainInputTo = this.config["setMainInputTo"]; // Used to set the input source
+    this.setMainInputTo = this.config['setMainInputTo']; // Used to set the input source
     // this.playVolume = this.config["play_volume"]; // Not used
-    this.minVolume = this.config["min_volume"] || -65.0; // Used in getStatus for fan volume
-    this.maxVolume = this.config["max_volume"] || -10.0; // Used in getStatus for fan volume
+    this.minVolume = this.config['min_volume'] || -65.0; // Used in getStatus for fan volume
+    this.maxVolume = this.config['max_volume'] || -10.0; // Used in getStatus for fan volume
     this.gapVolume = this.maxVolume - this.minVolume; // Used in getStatus for volume percentage calculation
     // this.showInputName = this.config["show_input_name"] || "no"; // Not used
-    this.setInputTo = this.config["setInputTo"] || this.setMainInputTo; // Used for setting input in onSet
-    this.setScene = this.config["set_scene"] || {}; // Used in onSet for scene configuration
+    this.setInputTo = this.config['setInputTo'] || this.setMainInputTo; // Used for setting input in onSet
+    this.setScene = this.config['set_scene'] || {}; // Used in onSet for scene configuration
 
     this.log(`Adding Input Switch ${name}`);
     return this.getAccessory();
@@ -30,9 +30,9 @@ class YamahaInputService {
 
   getAccessory() {
     const uuid = this.api.hap.uuid.generate(
-      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
+      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`,
     );
-    var accessory;
+    let accessory;
     if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
       accessory = new this.api.platformAccessory(this.name, uuid);
     } else {
@@ -50,15 +50,15 @@ class YamahaInputService {
 
     informationService
       .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
-      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, 'yamaha-home')
       .setCharacteristic(
         this.api.hap.Characteristic.Model,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0],
       )
       .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, packageJson.version)
       .setCharacteristic(
         this.api.hap.Characteristic.SerialNumber,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0],
       );
 
     const inputSwitchService =
@@ -84,7 +84,7 @@ class YamahaInputService {
 
           if (this.setScene) {
             await this.yamaha.SendXMLToReceiver(
-              `<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ${this.setScene}</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>`
+              `<YAMAHA_AV cmd="PUT"><Main_Zone><Scene><Scene_Sel>Scene ${this.setScene}</Scene_Sel></Scene></Main_Zone></YAMAHA_AV>`,
             );
           }
 
@@ -123,7 +123,7 @@ class YamahaInputService {
               'Status update Fan service %s On to %s, and Volume to %s',
               accessory.context.zone,
               value,
-              percentage
+              percentage,
             );
             break;
           }
@@ -136,7 +136,7 @@ class YamahaInputService {
       } catch (error) {
         this.log.error(
           `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
-          error
+          error,
         );
       }
     }

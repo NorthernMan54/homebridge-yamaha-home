@@ -25,8 +25,7 @@ class CachedYamaha {
       // console.log(`Cache miss for key: ${key}`);
       this.cache.set(key, value);
       return value;
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Error fetching value:', key, this.yamaha.ip);
       return new Error('Communication Error');
     }

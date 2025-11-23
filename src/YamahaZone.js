@@ -12,12 +12,12 @@ class YamahaZone {
 
     this.sysConfig = sysConfig;
 
-    this.minVolume = this.config["min_volume"] || -65.0;
-    this.maxVolume = this.config["max_volume"] || -10.0;
+    this.minVolume = this.config['min_volume'] || -65.0;
+    this.maxVolume = this.config['max_volume'] || -10.0;
     this.gapVolume = this.maxVolume - this.minVolume;
 
     this.zone = zone;
-    this.zoneNameMap = this.config["zone_name_map"] || {};
+    this.zoneNameMap = this.config['zone_name_map'] || {};
     this.name = this.zoneNameMap[name] || name;
 
     this.statusList = [];
@@ -37,9 +37,9 @@ class YamahaZone {
           await this.yamaha.setMainInputTo(this.setMainInputTo);
         }
 
-        if (this.setMainInputTo === "AirPlay") {
+        if (this.setMainInputTo === 'AirPlay') {
           await this.yamaha.SendXMLToReceiver(
-            '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
+            '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>',
           );
         }
       } else {
@@ -55,9 +55,9 @@ class YamahaZone {
 
   getAccessory() {
     const uuid = this.api.hap.uuid.generate(
-      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
+      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`,
     );
-    var accessory;
+    let accessory;
     if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
       this.log.info(`Creating Zone accessory for ${this.name}`);
       accessory = new this.api.platformAccessory(this.name, uuid);
@@ -78,21 +78,21 @@ class YamahaZone {
 
     informationService
       .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
-      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, 'yamaha-home')
       .setCharacteristic(
         this.api.hap.Characteristic.Model,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0],
       )
       .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, packageJson.version)
       .setCharacteristic(
         this.api.hap.Characteristic.SerialNumber,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0],
       );
 
-    if (this.zone === "Main_Zone") {
+    if (this.zone === 'Main_Zone') {
       const mainPower =
         accessory.getService(this.api.hap.Service.Switch) ||
-        accessory.addService(this.api.hap.Service.Switch, "Yamaha Power");
+        accessory.addService(this.api.hap.Service.Switch, 'Yamaha Power');
 
       mainPower
         .getCharacteristic(this.api.hap.Characteristic.On)
@@ -182,7 +182,7 @@ class YamahaZone {
           } catch (error) {
             this.log.error('Error getting Power:', error);
             service.getCharacteristic(this.api.hap.Characteristic.On).updateValue(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));
-            value = "error";
+            value = 'error';
           }
           debug('Status update %s Switch service %s to %s', service.displayName, accessory.context.zone, value);
           break;
@@ -197,7 +197,7 @@ class YamahaZone {
             break;
           }
           const basicInfo = await accessory.context.yamaha.getBasicInfo(accessory.context.zone);
-          
+
           if (typeof basicInfo.getVolume === 'function') {
             const volume = await basicInfo?.getVolume() / 10.0;
             let percentage = 100 * ((volume - this.minVolume) / this.gapVolume);
@@ -207,7 +207,7 @@ class YamahaZone {
               'Status update Fan service %s On to %s, and Volume to %s',
               accessory.context.zone,
               value,
-              percentage
+              percentage,
             );
           } else {
             service.getCharacteristic(this.api.hap.Characteristic.RotationSpeed).updateValue(new this.api.hap.HapStatusError(this.api.hap.HAPStatus.SERVICE_COMMUNICATION_FAILURE));

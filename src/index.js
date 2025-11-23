@@ -1,6 +1,6 @@
 'use strict';
 
-const debug = require('debug')('yamaha-home');
+// const debug = require('debug')('yamaha-home');
 const Yamaha = require('yamaha-nodejs');
 const bonjour = require('bonjour')();
 const ip = require('ip');
@@ -48,7 +48,7 @@ class YamahaAVRPlatform {
       party_switch = false,
       inputs_as_accessories = {},
       zone_controllers_only_for = null,
-      flush = false
+      flush = false,
     } = config;
 
     this.zone = zone;
@@ -99,6 +99,7 @@ class YamahaAVRPlatform {
       if (this.accessories.length >= this.expectedDevices || timeElapsed > this.discoveryTimeout * 1000) {
         clearTimeout(timer);
         browser.stop();
+        // ignore max-length on next line
         this.log.success(`Discovery finished, found ${this.receiverCount} Yamaha AVR's and creating ${this.newReceivers.length} new HomeKit accessories.  Total accessories: ${this.accessories.length}`);
         if (this.newReceivers.length) {
           this.api.registerPlatformAccessories(PLUGIN_NAME, PLATFORM_NAME, this.newReceivers);
@@ -147,14 +148,18 @@ class YamahaAVRPlatform {
       service.host = ipv4Address;
     }
 
-    if (service.port !== 80) return; // yamaha-nodejs only supports port 80
+    if (service.port !== 80) {
+      return;
+    } // yamaha-nodejs only supports port 80
 
     const yamaha = new Yamaha(service.host);
     const cachedYamaha = new CachedYamaha(yamaha, { stdTTL: 30, checkperiod: 60 }); // Cache wrapper
     const yamahaProxy = cachedYamaha.createProxy(); // Cached proxy for API calls
 
     try {
-      const systemConfig = await yamahaProxy.getSystemConfig().catch(e => { e; return null; });
+      const systemConfig = await yamahaProxy.getSystemConfig().catch(e => {
+        e; return null;
+      });
       if (systemConfig?.YAMAHA_AV) {
         await this.createReceiver(service.name, yamahaProxy, systemConfig);
       } else {
@@ -243,9 +248,9 @@ class YamahaAVRPlatform {
 
     if (this.radioPresets) {
       const presets = await yamaha.getTunerPresetList();
-      for (var preset in presets) {
-        this.log("Adding preset %s - %s", preset, presets[preset].value, this.presetNum);
-        var accessory;
+      for (const preset in presets) {
+        this.log('Adding preset %s - %s', preset, presets[preset].value, this.presetNum);
+        let accessory;
         if (!this.presetNum) {
           // preset by frequency
           accessory = new YamahaSwitch(this, presets[preset].value, yamaha, sysConfig, preset);

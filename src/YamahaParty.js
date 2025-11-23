@@ -1,5 +1,5 @@
 const packageJson = require('../package.json');
-var debug = require('debug')('yamaha-Party');
+const debug = require('debug')('yamaha-Party');
 
 module.exports = class YamahaParty {
   constructor(externalContext, name, yamaha, sysConfig) {
@@ -11,26 +11,26 @@ module.exports = class YamahaParty {
     this.sysConfig = sysConfig;
 
     // Constructor parameters and their usage review
-    this.nameSuffix = this.config["name_suffix"] || " Party Mode"; // Used in logging name generation
-    this.zone = this.config["zone"] || 1; // Used in UUID generation
-    this.name = "Party Mode"; // Used for accessory name
+    this.nameSuffix = this.config['name_suffix'] || ' Party Mode'; // Used in logging name generation
+    this.zone = this.config['zone'] || 1; // Used in UUID generation
+    this.name = 'Party Mode'; // Used for accessory name
     this.serviceName = name; // Used for service initialization
-    this.setMainInputTo = this.config["setMainInputTo"]; // Used in `partyModeOn` logic
+    this.setMainInputTo = this.config['setMainInputTo']; // Used in `partyModeOn` logic
     // this.playVolume = this.config["play_volume"]; // Not used
-    this.minVolume = this.config["min_volume"] || -65.0; // Not directly used here but useful for volume scaling logic
-    this.maxVolume = this.config["max_volume"] || -10.0; // Not directly used here but useful for volume scaling logic
+    this.minVolume = this.config['min_volume'] || -65.0; // Not directly used here but useful for volume scaling logic
+    this.maxVolume = this.config['max_volume'] || -10.0; // Not directly used here but useful for volume scaling logic
     this.gapVolume = this.maxVolume - this.minVolume; // Not directly used here but calculated for potential future usage
     // this.showInputName = this.config["show_input_name"] || "no"; // Not used
 
-    this.log("Adding Party Switch %s", name);
+    this.log('Adding Party Switch %s', name);
     return this.getAccessory();
   }
 
   getAccessory() {
     const uuid = this.api.hap.uuid.generate(
-      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
+      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`,
     );
-    var accessory;
+    let accessory;
     if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
       this.log.info(`Creating YamahaParty accessory for ${this.name}`);
       accessory = new this.api.platformAccessory(this.name, uuid);
@@ -50,15 +50,15 @@ module.exports = class YamahaParty {
 
     informationService
       .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
-      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, 'yamaha-home')
       .setCharacteristic(
         this.api.hap.Characteristic.Model,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0],
       )
       .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, packageJson.version)
       .setCharacteristic(
         this.api.hap.Characteristic.SerialNumber,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0],
       );
 
     const partyService =
@@ -113,7 +113,7 @@ module.exports = class YamahaParty {
       } catch (error) {
         this.log.error(
           `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
-          error
+          error,
         );
       }
     }

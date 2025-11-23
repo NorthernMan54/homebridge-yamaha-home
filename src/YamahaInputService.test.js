@@ -207,7 +207,7 @@ describe('YamahaInputService', () => {
       await onSetHandler(true);
 
       expect(yamaha.SendXMLToReceiver).toHaveBeenCalledWith(
-        expect.stringContaining('<Scene_Sel>Scene 1</Scene_Sel>')
+        expect.stringContaining('<Scene_Sel>Scene 1</Scene_Sel>'),
       );
     });
 

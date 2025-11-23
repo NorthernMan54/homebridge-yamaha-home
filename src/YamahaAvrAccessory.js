@@ -11,23 +11,23 @@ class YamahaAVRAccessory {
     this.yamaha = yamaha;
     this.sysConfig = sysConfig;
 
-    this.nameSuffix = this.config["name_suffix"] || " Speakers";
-    this.zone = this.config["zone"] || 1;
+    this.nameSuffix = this.config['name_suffix'] || ' Speakers';
+    this.zone = this.config['zone'] || 1;
     this.name = name;
     this.serviceName = name + this.nameSuffix;
-    this.setMainInputTo = this.config["setMainInputTo"];
-    this.playVolume = this.config["play_volume"];
-    this.minVolume = this.config["min_volume"] || -65.0;
-    this.maxVolume = this.config["max_volume"] || -10.0;
+    this.setMainInputTo = this.config['setMainInputTo'];
+    this.playVolume = this.config['play_volume'];
+    this.minVolume = this.config['min_volume'] || -65.0;
+    this.maxVolume = this.config['max_volume'] || -10.0;
     this.gapVolume = this.maxVolume - this.minVolume;
-    this.showInputName = this.config["show_input_name"] || "no";
+    this.showInputName = this.config['show_input_name'] || 'no';
     return this.getAccessory();
   }
 
   async setPlaying(playing) {
     try {
       if (playing) {
-        await this.yamaha.powerOn("System");
+        await this.yamaha.powerOn('System');
 
         if (this.playVolume) {
           await this.yamaha.setVolumeTo(this.playVolume * 10, this.zone);
@@ -36,26 +36,26 @@ class YamahaAVRAccessory {
         if (this.setMainInputTo) {
           await this.yamaha.setMainInputTo(this.setMainInputTo);
 
-          if (this.setMainInputTo === "AirPlay") {
+          if (this.setMainInputTo === 'AirPlay') {
             await this.yamaha.SendXMLToReceiver(
-              '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>'
+              '<YAMAHA_AV cmd="PUT"><AirPlay><Play_Control><Playback>Play</Playback></Play_Control></AirPlay></YAMAHA_AV>',
             );
           }
         }
       } else {
-        await this.yamaha.powerOff("System");
+        await this.yamaha.powerOff('System');
       }
     } catch (error) {
-      this.log.error("Error setting playing state:", error);
+      this.log.error('Error setting playing state:', error);
       throw error;
     }
   }
 
   getAccessory() {
     const uuid = this.api.hap.uuid.generate(
-      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`
+      `${this.name}${this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]}${this.zone}`,
     );
-    var accessory;
+    let accessory;
     if (!this.accessories.find(accessory => accessory.UUID === uuid)) {
       this.log.info(`Creating Zone accessory for ${this.name}`);
       accessory = new this.api.platformAccessory(this.name, uuid);
@@ -75,23 +75,23 @@ class YamahaAVRAccessory {
 
     informationService
       .setCharacteristic(this.api.hap.Characteristic.Name, this.name)
-      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, "yamaha-home")
+      .setCharacteristic(this.api.hap.Characteristic.Manufacturer, 'yamaha-home')
       .setCharacteristic(
         this.api.hap.Characteristic.Model,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].Model_Name[0],
       )
       .setCharacteristic(this.api.hap.Characteristic.FirmwareRevision, packageJson.version)
       .setCharacteristic(
         this.api.hap.Characteristic.SerialNumber,
-        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0]
+        this.sysConfig.YAMAHA_AV.System[0].Config[0].System_ID[0],
       );
 
     const switchService = accessory.getService(this.api.hap.Service.Switch) ||
-      accessory.addService(this.api.hap.Service.Switch, "Yamaha Power");
+      accessory.addService(this.api.hap.Service.Switch, 'Yamaha Power');
 
     switchService
       .getCharacteristic(this.api.hap.Characteristic.On)
-      .on("get", async (callback) => {
+      .on('get', async (callback) => {
         try {
           const result = await this.yamaha.isOn();
           callback(null, result);
@@ -99,7 +99,7 @@ class YamahaAVRAccessory {
           callback(error, false);
         }
       })
-      .on("set", async (powerOn, callback) => {
+      .on('set', async (powerOn, callback) => {
         try {
           await this.setPlaying(powerOn);
           callback(null);
@@ -139,7 +139,7 @@ class YamahaAVRAccessory {
           let p = 100 * ((v - this.minVolume) / this.gapVolume);
           p = Math.max(0, Math.min(100, Math.round(p)));
           debug(`Got volume percent of ${v}%, ${p}%`, this.zone);
-          return p
+          return p;
         } catch (error) {
           this.log.error('Error getting volume:', error);
         }
@@ -156,12 +156,12 @@ class YamahaAVRAccessory {
 
     const audioDeviceService =
       accessory.getService(this.api.hap.Service.Speaker) ||
-      accessory.addService(this.api.hap.Service.Speaker, "Speaker");
+      accessory.addService(this.api.hap.Service.Speaker, 'Speaker');
 
     const volCx = audioDeviceService.addCharacteristic(this.api.hap.Characteristic.Volume);
 
     volCx
-      .on("get", async (callback) => {
+      .on('get', async (callback) => {
         try {
           const basicInfo = await this.yamaha.getBasicInfo(this.zone);
           const v = basicInfo.getVolume() / 10.0;
@@ -171,7 +171,7 @@ class YamahaAVRAccessory {
           callback(error, 0);
         }
       })
-      .on("set", async (p, callback) => {
+      .on('set', async (p, callback) => {
         try {
           const v = Math.round(((p / 100) * this.gapVolume) + this.minVolume) * 10.0;
           await this.yamaha.setVolumeTo(v, this.zone);
@@ -183,7 +183,7 @@ class YamahaAVRAccessory {
 
     const mutingCx = audioDeviceService.getCharacteristic(this.api.hap.Characteristic.Mute);
     mutingCx
-      .on("get", async (callback) => {
+      .on('get', async (callback) => {
         try {
           const basicInfo = await this.yamaha.getBasicInfo(this.zone);
           callback(null, basicInfo.isMuted());
@@ -191,10 +191,10 @@ class YamahaAVRAccessory {
           callback(error, 0);
         }
       })
-      .on("set", async (v, callback) => {
+      .on('set', async (v, callback) => {
         try {
-          const zoneName = this.zone !== 1 ? `Zone_${this.zone}` : "Main_Zone";
-          const muteXML = `<YAMAHA_AV cmd="PUT"><${zoneName}><Volume><Mute>${v ? "On" : "Off"}</Mute></Volume></${zoneName}></YAMAHA_AV>`;
+          const zoneName = this.zone !== 1 ? `Zone_${this.zone}` : 'Main_Zone';
+          const muteXML = `<YAMAHA_AV cmd="PUT"><${zoneName}><Volume><Mute>${v ? 'On' : 'Off'}</Mute></Volume></${zoneName}></YAMAHA_AV>`;
           await this.yamaha.SendXMLToReceiver(muteXML);
           callback(null);
         } catch (error) {
@@ -231,7 +231,7 @@ class YamahaAVRAccessory {
               'Updating Fan service %s On to %s, and Volume to %s',
               accessory.context.zone,
               value,
-              percentage
+              percentage,
             );
             break;
           }
@@ -244,7 +244,7 @@ class YamahaAVRAccessory {
       } catch (error) {
         this.log.error(
           `Error getting status for ${(service.name ? service.name : service.displayName)}:`,
-          error
+          error,
         );
       }
     }
